@@ -4,6 +4,7 @@ import "./globals.css";
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from "@/components/theme-provider";
 import AdminLayoutClient from "../layout/admin.layout.client";
+import { AuthProvider } from "@/components/providers/auth-rovider";
 const geistSans = Geist({
 	variable: "--font-geist-sans",
 	subsets: ["latin"],
@@ -41,7 +42,9 @@ export default function RootLayout({
 					enableSystem
 					disableTransitionOnChange
 				>
-					{children}
+					<AuthProvider>
+						{children}
+					</AuthProvider>
 				</ThemeProvider>
 			</body>
 		</html>

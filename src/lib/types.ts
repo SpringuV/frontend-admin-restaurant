@@ -6,10 +6,10 @@ export type PropsType = {
 }
 
 export type TableType = {
-    number: number;
+    available: boolean;
     capacity: number;
-    id: number;
-    status: string;
+    id_table: number;
+    type: string;
 }
 
 export type PayloadToken = {
@@ -32,3 +32,13 @@ export type AlertProps =   {
 }
 
 export type AlertStatus = 'success' | 'error' | 'info' | 'warning';
+
+export type BookingType = {
+    id_table: number;
+    customer_name: string;
+    phone_cus: string;
+    sum_human: number;
+    note_booking?: string;
+    user_id: string;
+    type: string;
+}

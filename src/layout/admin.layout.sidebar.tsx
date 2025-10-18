@@ -94,7 +94,7 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
         <aside
             className={cn(
                 'bg-slate-900 text-white transition-all duration-300 ease-in-out flex flex-col',
-                collapsed ? 'w-20' : 'w-64'
+                collapsed ? 'w-20' : 'w-52'
             )}
         >
             {/* Logo */}
