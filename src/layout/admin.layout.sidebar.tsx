@@ -13,7 +13,7 @@ import {
     ArrowUpCircle,
     BarChart3
 } from "lucide-react";
-import { PropsType } from '../../types/types';
+import { PropsType } from '../lib/types';
 import { useRouter } from 'next/navigation';
 
 const AdminSideBar = ({ collapsed }: PropsType) => {

@@ -1,6 +1,7 @@
+'use client'
 import { ModeToggle } from "@/components/toggle-mode"
 import { Button } from "@/components/ui/button"
-import { ListIndentDecrease, ListIndentIncrease } from "lucide-react";
+import { ListIndentDecrease, ListIndentIncrease, LogOut } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -9,9 +10,16 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { PropsType } from "../../types/types";
+import { PropsType } from "../lib/types";
+import { useState } from "react";
+import { useLogout } from "@/hooks/user";
+import { Spinner } from "@/components/ui/spinner";
 
 const AdminHeader = ({ onCollapse, collapsed }: PropsType) => {
+    const { logout, isLoading } = useLogout();
+    const handleLogout = () => {
+        logout()
+    }
     return (
         <header className="bg-white w-full dark:bg-gray-600 border-b border-gray-200 h-16 flex justify-between items-center px-3 shadow-sm">
             <Button
@@ -27,7 +35,8 @@ const AdminHeader = ({ onCollapse, collapsed }: PropsType) => {
                 )}
             </Button>
 
-            <div className="flex">
+            <div className="flex items-center gap-2">
+                <div>Xin chào <span className="underline">abc</span></div>
                 <div className="mr-2">
                     <ModeToggle />
                 </div>
@@ -36,11 +45,23 @@ const AdminHeader = ({ onCollapse, collapsed }: PropsType) => {
                     <DropdownMenuContent className="text-center">
                         <DropdownMenuLabel>My Account</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem> Profile</DropdownMenuItem>
-                        <DropdownMenuItem> Billing</DropdownMenuItem>
-                        <DropdownMenuItem> Team</DropdownMenuItem>
-                        <DropdownMenuItem> Subscription</DropdownMenuItem>
-                        <DropdownMenuItem> Đăng xuất</DropdownMenuItem>
+                        <DropdownMenuItem className="flex justify-center"> Profile</DropdownMenuItem>
+                        <DropdownMenuItem className="flex justify-center"> Billing</DropdownMenuItem>
+                        <DropdownMenuItem className="flex justify-center"> Team</DropdownMenuItem>
+                        <DropdownMenuItem className="flex justify-center"> Subscription</DropdownMenuItem>
+                        <button onClick={handleLogout}>
+                            <DropdownMenuItem className="bg-red-400 hover:!bg-red-600 text-white">
+                                {isLoading
+                                    ? <div className="flex items-center gap-1">
+                                        <Spinner className="w-3 h-3 text-red-500" />
+                                        Đăng xuất
+                                    </div>
+                                    : <div className="flex items-center gap-1">
+                                        <LogOut className="!text-white" />
+                                        Đăng xuất
+                                    </div>}
+                            </DropdownMenuItem>
+                        </button>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

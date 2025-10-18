@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
@@ -5,16 +6,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useLogin } from '@/hooks/user';
+import { AlertProps, PayloadToken } from '@/lib/types';
+import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation';
+import Alert from '@/components/alert/alert';
+import LoadingModal from '@/components/modal/modal-loading';
 
 const LoginPage = () => {
+    const route = useRouter()
     const [showPassword, setShowPassword] = useState(false);
     const [showForgotForm, setShowForgotForm] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [localLoading, setLocalLoading] = useState(false)
+    const [textModalLoading, setTextModalLoading] = useState("")
     const [formData, setFormData] = useState({
-        email: '',
+        username: '',
         password: '',
     });
     const [forgotEmail, setForgotEmail] = useState('');
+    const [alert, setAlert] = useState<AlertProps | null>(null)
+
+    // login
+    const { login, isLoading, error, data } = useLogin();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -24,30 +37,59 @@ const LoginPage = () => {
         }));
     };
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        setTimeout(() => {
-            console.log('Đăng nhập:', formData);
-            setIsLoading(false);
-            alert('Đăng nhập thành công!');
-        }, 1000);
+        try {
+            const res = await login(formData);
+            if (res.result.authenticated) {
+                // Lưu token vào localStorage
+                localStorage.setItem('token', res.result.token);
+                const token = res.result.token;
+                const payload = jwtDecode<PayloadToken>(token);
+                localStorage.setItem('payload-token', JSON.stringify(payload))
+                setAlert({ title: 'Thành công', message: "Đăng nhập thành công", type: 'success' })
+                // alert(`Đăng nhập thành công!`);
+                setTextModalLoading("Đang vào trang quản lý ...")
+                setLocalLoading(true)
+                setTimeout(() => {
+                    route.push('/booking');
+                    setLocalLoading(false)
+                    setTextModalLoading("")
+                }, 3000);
+            }
+
+        } catch (err: any) {
+            setAlert({ title: 'Lỗi', message: `Đăng nhập thất bại, ${err}`, type: 'error' })
+        }
     };
 
     const handleForgotPassword = (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        setTimeout(() => {
-            console.log('Gửi yêu cầu đặt lại mật khẩu cho:', forgotEmail);
-            setIsLoading(false);
-            alert('Vui lòng kiểm tra email để đặt lại mật khẩu!');
-            setShowForgotForm(false);
-            setForgotEmail('');
-        }, 1000);
+        setAlert({ title: 'Thông báo', message: `Gửi email reset tới ${forgotEmail} (chưa implement API)`, type: 'info' })
+        setForgotEmail('');
+        setShowForgotForm(false);
     };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-red-500 via-red-400 to-yellow-300 flex items-center justify-center p-4">
+            {alert && (
+                <div className="absolute top-15 right-10 z-50">
+                    <Alert
+                        title={alert.title}
+                        message={alert.message}
+                        type={alert.type}
+                        duration={alert.duration ?? 3000}
+                        onClose={() => setAlert(null)}
+                    />
+                </div>
+            )}
+
+            <LoadingModal
+                open={localLoading}
+                text={textModalLoading}
+            />
+
+
             {/* Decorative Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-10 left-10 w-20 h-20 bg-yellow-300 rounded-full opacity-20"></div>
@@ -65,8 +107,8 @@ const LoginPage = () => {
                         {showForgotForm ? 'Quên Mật Khẩu' : 'Đăng Nhập'}
                     </CardTitle>
                     <CardDescription>
-                        {showForgotForm 
-                            ? 'Nhập email của bạn để đặt lại mật khẩu' 
+                        {showForgotForm
+                            ? 'Nhập email của bạn để đặt lại mật khẩu'
                             : 'Đăng nhập vào tài khoản quản lý nhà hàng'}
                     </CardDescription>
                 </CardHeader>
@@ -76,13 +118,13 @@ const LoginPage = () => {
                         <form onSubmit={handleLogin} className="space-y-4">
                             {/* Email Field */}
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-gray-700">Email</Label>
+                                <Label htmlFor="username" className="text-gray-700">Tên đăng nhập</Label>
                                 <Input
-                                    id="email"
-                                    name="email"
-                                    type="email"
-                                    placeholder="admin@nhaang.com"
-                                    value={formData.email}
+                                    id="username"
+                                    name="username"
+                                    type="text"
+                                    placeholder="Tên đăng nhập..."
+                                    value={formData.username}
                                     onChange={handleInputChange}
                                     required
                                     className="border-gray-300 focus:border-red-500 focus:ring-red-500"
@@ -102,7 +144,8 @@ const LoginPage = () => {
                                         onChange={handleInputChange}
                                         required
                                         className="border-gray-300 focus:border-red-500 focus:ring-red-500 pr-10"
-                                    />
+                                    />Quản lý kho
+                                    
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
