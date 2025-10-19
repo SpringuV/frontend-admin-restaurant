@@ -143,7 +143,7 @@ const Login = ()=>{
                                         onChange={handleInputChange}
                                         required
                                         className="border-gray-300 focus:border-red-500 focus:ring-red-500 pr-10"
-                                    />Quản lý kho
+                                    />
                                     
                                     <button
                                         type="button"

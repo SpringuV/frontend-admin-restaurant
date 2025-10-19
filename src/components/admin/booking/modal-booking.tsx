@@ -1,6 +1,6 @@
 'use client'
 import { X, Users, User, Phone, ChevronDown } from 'lucide-react';
-import { BookingType, TableType } from '../../../lib/types';
+import { AlertProps, BookingType, TableType } from '../../../lib/types';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
@@ -12,9 +12,11 @@ type PropsBookingType = {
     isModalOpen: boolean;
     // onOpen: (val: boolean) => void;
     selectedTable: TableType | null
-    onClose: () => void;
+    onClose: () => void
+    onReloadListTable: () => void
+    onAlert?: (alert: AlertProps) => void;
 }
-const ModalBooking = ({ isModalOpen, selectedTable, onClose }: PropsBookingType) => {
+const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, onClose }: PropsBookingType) => {
     const [inputData, setInputData] = useState<BookingType>({
         customer_name: "",
         id_table: selectedTable?.id_table || 0,
@@ -22,7 +24,6 @@ const ModalBooking = ({ isModalOpen, selectedTable, onClose }: PropsBookingType)
         user_id: getUserIdFromStorage() as string,
         note_booking: "",
         sum_human: 1,
-        type: selectedTable?.type || 'NORMAL'
     });
     const { bookTable, isLoading, error, data } = useBookingTable();
 
@@ -35,17 +36,27 @@ const ModalBooking = ({ isModalOpen, selectedTable, onClose }: PropsBookingType)
         }));
     };
 
-    const handleBooking = async(e: React.FormEvent) => {
+    const handleBooking = async (e: React.FormEvent) => {
         e.preventDefault();
         // Validate phone: phải bắt đầu bằng 0 và chỉ chứa số
         const phoneRegex = /^0\d{9,10}$/;
         if (!phoneRegex.test(inputData.phone_cus)) {
-            alert('Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 10–11 số.');
+            onAlert?.({
+                title: 'Lỗi',
+                type: 'error',
+                message: 'Số điện thoại không hợp lệ, phải bắt đầu bằng 0 và có 10–11 số.',
+                duration: 4000,
+            });
             return;
         }
 
         if (!inputData.customer_name) {
-            alert('Vui lòng nhập tên khách hàng.');
+            onAlert?.({
+                title: 'Cảnh báo',
+                type: 'warning',
+                message: 'Vui lòng nhập tên khách hàng.',
+                duration: 4000,
+            });
             return;
         }
         const bookingData: BookingType = {
@@ -55,19 +66,28 @@ const ModalBooking = ({ isModalOpen, selectedTable, onClose }: PropsBookingType)
             sum_human: inputData.sum_human ?? 2,
             note_booking: inputData.note_booking,
             user_id: inputData.user_id,
-            type: inputData.type
         };
 
         const result = await bookTable(bookingData);
         if (result) {
             console.log("Booking success:", result.result);
-            alert("Đặt bàn thành công!");
+            onAlert?.({
+                title: 'Thành công',
+                type: 'success',
+                message: `Bàn số ${selectedTable?.id_table} đã được đặt.`,
+                duration: 4000,
+            });
+            onReloadListTable();
             onClose();
         } else {
-            alert(error?.message || "Đặt bàn thất bại");
+            onAlert?.({
+                title: 'Lỗi',
+                type: 'error',
+                message: 'Đặt bàn thất bại, vui lòng thử lại!',
+                duration: 4000,
+            });
+            onClose()
         }
-        alert(`Đặt bàn số ${selectedTable?.id_table} thành công!`);
-        onClose()
     };
     return (
         <>
@@ -167,27 +187,6 @@ const ModalBooking = ({ isModalOpen, selectedTable, onClose }: PropsBookingType)
                                             ))}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </div>
-                                {/* Table Type */}
-                                <div>
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                        Loại bàn
-                                    </label>
-                                    <div className="flex justify-center w-full gap-4">
-                                        {['VIP', 'NORMAL'].map((type) => (
-                                            <label key={type} className="flex items-center gap-1 cursor-pointer">
-                                                <input
-                                                    type="radio"
-                                                    name="type"
-                                                    value={type}
-                                                    checked={inputData.type === type}
-                                                    onChange={handleChange}
-                                                    className="w-4 h-4 bg-blue-600"
-                                                />
-                                                <span className="text-gray-700">{type}</span>
-                                            </label>
-                                        ))}
-                                    </div>
                                 </div>
                                 {/* Note */}
                                 <div>

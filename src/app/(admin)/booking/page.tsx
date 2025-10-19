@@ -3,17 +3,18 @@
 import { useState } from 'react';
 import { Users } from 'lucide-react';
 import ModalBooking from '@/components/admin/booking/modal-booking';
-import { TableType } from '../../../lib/types';
+import { AlertProps, TableType } from '../../../lib/types';
 import { useLoadGuestTable } from '@/hooks/booking-orders';
 import { Spinner } from '@/components/ui/spinner';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import Alert from '@/components/alert/alert';
 
 
 
 const BookingPage = () => {
     const [selectedTable, setSelectedTable] = useState<TableType | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-
+    const [alert, setAlert] = useState<AlertProps | null>(null)
     const { tables, isLoading, error, reload } = useLoadGuestTable()
 
     const handleTableClick = (table: TableType) => {
@@ -38,6 +39,16 @@ const BookingPage = () => {
 
     return (
         <ProtectedRoute>
+            {/* Hiển thị Alert */}
+            {alert && (
+                <Alert
+                    title={alert.title}
+                    type={alert.type}
+                    message={alert.message}
+                    icon={alert.icon}
+                    duration={alert.duration}
+                />
+            )}
             <div className="min-h-screen h-full w-full bg-gray-50 md:p-4">
                 {/* Header */}
                 <div className="max-w-7xl mx-auto mb-8">
@@ -86,7 +97,7 @@ const BookingPage = () => {
                     ))}
                 </div>)}
 
-                <ModalBooking selectedTable={selectedTable} onClose={closeModal} isModalOpen={isModalOpen} />
+                <ModalBooking onAlert={setAlert} onReloadListTable={reload} selectedTable={selectedTable} onClose={closeModal} isModalOpen={isModalOpen} />
             </div>
         </ProtectedRoute>
     );

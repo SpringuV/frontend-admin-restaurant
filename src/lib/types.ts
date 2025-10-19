@@ -22,7 +22,7 @@ export type PayloadToken = {
     iss?: string;
 };
 
-export type AlertProps =   {
+export type AlertProps = {
     title: 'Thông báo' | 'Thành công' | 'Lỗi' | 'Cảnh báo';
     message: string;
     icon?: ReactNode;
@@ -40,5 +40,4 @@ export type BookingType = {
     sum_human: number;
     note_booking?: string;
     user_id: string;
-    type: string;
 }
