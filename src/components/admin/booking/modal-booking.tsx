@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// components/admin/booking/modal-booking.tsx
 'use client'
 import { X, Users, User, Phone, ChevronDown } from 'lucide-react';
 import { AlertProps, BookingType, TableType } from '../../../lib/types';
@@ -7,15 +9,17 @@ import { DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
 import { ChangeEvent, useState } from 'react';
 import { getUserIdFromStorage } from '@/lib/utils';
 import { useBookingTable } from '@/hooks/booking-orders';
+import ModalOrderFood from './modal-order-food';
+import { saveBookingToSession } from '@/lib/session-storage-helper';
 
 type PropsBookingType = {
     isModalOpen: boolean;
-    // onOpen: (val: boolean) => void;
-    selectedTable: TableType | null
-    onClose: () => void
-    onReloadListTable: () => void
+    selectedTable: TableType | null;
+    onClose: () => void;
+    onReloadListTable: () => void;
     onAlert?: (alert: AlertProps) => void;
 }
+
 const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, onClose }: PropsBookingType) => {
     const [inputData, setInputData] = useState<BookingType>({
         customer_name: "",
@@ -25,9 +29,12 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
         note_booking: "",
         sum_human: 1,
     });
-    const { bookTable, isLoading, error, data } = useBookingTable();
 
-    // Cập nhật state chung
+    const [showOrderModal, setShowOrderModal] = useState(false);
+    const [bookingResponse, setBookingResponse] = useState<any>(null);
+
+    const { bookTable, isLoading } = useBookingTable();
+
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setInputData(prev => ({
@@ -38,13 +45,14 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
 
     const handleBooking = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Validate phone: phải bắt đầu bằng 0 và chỉ chứa số
+
+        // Validate
         const phoneRegex = /^0\d{9,10}$/;
         if (!phoneRegex.test(inputData.phone_cus)) {
             onAlert?.({
                 title: 'Lỗi',
                 type: 'error',
-                message: 'Số điện thoại không hợp lệ, phải bắt đầu bằng 0 và có 10–11 số.',
+                message: 'Số điện thoại không hợp lệ!',
                 duration: 4000,
             });
             return;
@@ -59,6 +67,7 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
             });
             return;
         }
+
         const bookingData: BookingType = {
             id_table: selectedTable?.id_table || 0,
             customer_name: inputData.customer_name,
@@ -68,49 +77,74 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
             user_id: inputData.user_id,
         };
 
-        const result = await bookTable(bookingData);
-        if (result) {
-            console.log("Booking success:", result.result);
-            onAlert?.({
-                title: 'Thành công',
-                type: 'success',
-                message: `Bàn số ${selectedTable?.id_table} đã được đặt.`,
-                duration: 4000,
-            });
-            onReloadListTable();
-            onClose();
-        } else {
+        try {
+            const result = await bookTable(bookingData);
+
+            if (result) {
+                console.log("✅ Booking success:", result.result);
+                
+                setBookingResponse(result.result);
+
+                // LƯU VÀO SESSION STORAGE (sử dụng helper function)
+                saveBookingToSession({
+                    id_table: selectedTable?.id_table || 0,
+                    id_order: Number(result.result.orderBookingResponse.id_order) || 0,
+                    phone_cus: result.result.customerBookingResponse.phone_number_cus || '', // fallback nếu không có id_cus
+                });
+
+                // Hiện thông báo thành công
+                onAlert?.({
+                    title: 'Thành công',
+                    type: 'success',
+                    message: `Bàn số ${selectedTable?.id_table} đã được đặt.`,
+                    duration: 4000,
+                });
+
+                // Đóng modal booking và mở modal order
+                onClose();
+                setShowOrderModal(true);
+            }
+        } catch (err) {
+            console.error('❌ Booking failed:', err);
             onAlert?.({
                 title: 'Lỗi',
                 type: 'error',
                 message: 'Đặt bàn thất bại, vui lòng thử lại!',
                 duration: 4000,
             });
-            onClose()
         }
     };
+
+    const handleOrderSubmit = (orderData: any) => {
+        console.log("✅ Order data:", orderData);
+
+        onAlert?.({
+            title: 'Thành công',
+            type: 'success',
+            message: 'Order món thành công!',
+            duration: 4000,
+        });
+
+        setShowOrderModal(false);
+        onReloadListTable();
+    };
+
     return (
         <>
-            {/* Modal */}
+            {/* Modal Booking */}
             {isModalOpen && selectedTable && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl w-[80vw] max-h-[90vh] overflow-y-auto">
-                        {/* Modal Header */}
                         <div className="flex items-center justify-between p-6 border-b">
                             <h2 className="text-2xl font-bold text-gray-800">
                                 Đặt bàn số {selectedTable?.id_table}
                             </h2>
-                            <button
-                                onClick={onClose}
-                                className="text-gray-500 hover:text-gray-700 transition-colors"
-                            >
+                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
 
-                        {/* Modal Body */}
                         <div className="p-6 space-y-4">
-                            {/* Table Info */}
                             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                                 <div className="flex items-center gap-2 text-green-800">
                                     <Users className="w-5 h-5" />
@@ -120,7 +154,6 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                                 </div>
                             </div>
 
-                            {/* Customer Name */}
                             <form onSubmit={handleBooking} className='grid grid-cols-3 gap-4'>
                                 <div>
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -138,7 +171,6 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                                     />
                                 </div>
 
-                                {/* Phone */}
                                 <div>
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                         <Phone className="w-4 h-4" />
@@ -156,7 +188,6 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                                     />
                                 </div>
 
-                                {/* Number of Guests */}
                                 <div>
                                     <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                                         <Users className="w-4 h-4" />
@@ -164,18 +195,12 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                                     </label>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className=" justify-between border-gray-300 text-gray-700 w-1/2"
-                                            >
+                                            <Button variant="outline" className="justify-between border-gray-300 text-gray-700 w-1/2">
                                                 {inputData.sum_human} người
                                                 <ChevronDown className="w-4 h-4 opacity-60" />
                                             </Button>
                                         </DropdownMenuTrigger>
-
-                                        <DropdownMenuContent
-                                            side="bottom"
-                                            className="w-[var(--radix-dropdown-menu-trigger-width)] mt-1">
+                                        <DropdownMenuContent side="bottom" className="w-[var(--radix-dropdown-menu-trigger-width)] mt-1">
                                             {[...Array(selectedTable.capacity)].map((_, i) => (
                                                 <DropdownMenuItem
                                                     key={i + 1}
@@ -188,7 +213,7 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
-                                {/* Note */}
+
                                 <div>
                                     <label className="text-sm font-medium text-gray-700 mb-2 block">
                                         Ghi chú (tùy chọn)
@@ -202,19 +227,17 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                                         placeholder="Nhập ghi chú thêm..."
                                     />
                                 </div>
+
                                 <div className="col-span-3 flex gap-3 pt-4">
-                                    <button
-                                        type="button"
-                                        onClick={onClose}
-                                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                                    >
+                                    <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
                                         Hủy
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+                                        disabled={isLoading}
+                                        className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium disabled:bg-gray-300"
                                     >
-                                        Xác nhận đặt bàn
+                                        {isLoading ? 'Đang xử lý...' : 'Xác nhận đặt bàn'}
                                     </button>
                                 </div>
                             </form>
@@ -222,8 +245,23 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                     </div>
                 </div>
             )}
-        </>
-    )
-}
 
-export default ModalBooking
+            {/* Modal Order Food */}
+            {showOrderModal && bookingResponse && (
+                <ModalOrderFood
+                    isOpen={showOrderModal}
+                    onClose={() => setShowOrderModal(false)}
+                    orderInfo={{
+                        id_order: bookingResponse.orderBookingResponse.id_order,
+                        id_table: bookingResponse.orderBookingResponse.id_table,
+                        customer_name: bookingResponse.customerBookingResponse.name_cus,
+                        phone_number: bookingResponse.customerBookingResponse.phone_number_cus,
+                    }}
+                    onSubmit={handleOrderSubmit}
+                />
+            )}
+        </>
+    );
+};
+
+export default ModalBooking;
