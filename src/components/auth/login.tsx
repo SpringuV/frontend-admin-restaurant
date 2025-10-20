@@ -33,12 +33,12 @@ const Login = () => {
     const [forgotEmail, setForgotEmail] = useState('');
     const [alert, setAlert] = useState<AlertProps | null>(null)
     const { login, isLoading, error, data } = useLogin();
-    
+
     // login
     useEffect(() => {
-        // Nếu đã đăng nhập, redirect về trang ban đầu hoặc admin
+        // Nếu đã đăng nhập, redirect về trang ban đầu hoặc booking
         if (!isLoading && isAuthenticated) {
-            const redirectUrl = searchParams.get('redirect') || '/admin';
+            const redirectUrl = searchParams.get('redirect') || '/booking';
             router.push(redirectUrl);
         }
     }, [isAuthenticated, isLoadingAuth, router, searchParams]);
