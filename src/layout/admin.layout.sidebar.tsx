@@ -4,85 +4,119 @@ import { cn } from "@/lib/utils";
 import {
     CalendarCheck,
     FileText,
-    Package,
-    SquareUser,
     ChevronDown,
     ChevronRight,
     DollarSign,
     ArrowDownCircle,
     ArrowUpCircle,
-    BarChart3
+    BarChart3,
+    Users,
+    UserPlus,
+    Layers,
+    ClipboardList,
+    Warehouse
 } from "lucide-react";
 import { PropsType } from '../lib/types';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 const AdminSideBar = ({ collapsed }: PropsType) => {
     const router = useRouter();
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+    const path_name = usePathname()
 
-    const handleNavigate = (path?: string) => {
-        if (path) router.push(path);
+    const handleNavigate = (path?: string, parentId?: string) => {
+        if (!path) return;
+        router.push(path);
+        if (parentId) setOpenSubmenu(parentId);
     };
 
     const menuItems = [
         {
-            id: '1',
+            id: "1",
             icon: <CalendarCheck className="w-5 h-5" />,
             path: "/booking",
-            label: 'Đặt bàn',
+            label: "Đặt bàn",
         },
         {
-            id: '2',
-            icon: <FileText className="w-5 h-5" />,
-            label: 'Quản lý hóa đơn',
+            id: "2",
+            icon: <ClipboardList className="w-5 h-5" />,
+            label: "Quản lý hóa đơn",
             hasSubmenu: true,
             submenu: [
                 {
-                    id: '2-1',
+                    id: "2-1",
                     icon: <FileText className="w-4 h-4" />,
-                    label: 'Danh sách hóa đơn',
-                    path: '/invoice',
+                    label: "Danh sách hóa đơn",
+                    path: "/invoice",
                 },
                 {
-                    id: '2-2',
+                    id: "2-2",
                     icon: <DollarSign className="w-4 h-4" />,
-                    label: 'Doanh thu',
-                    path: '/invoice/statistic',
-                }
-            ]
+                    label: "Doanh thu",
+                    path: "/invoice/statistic",
+                },
+            ],
         },
         {
-            id: '3',
-            icon: <Package className="w-5 h-5" />,
-            label: 'Quản lý kho',
+            id: "3",
+            icon: <Warehouse className="w-5 h-5" />,
+            label: "Quản lý kho",
             hasSubmenu: true,
             submenu: [
                 {
-                    id: '3-1',
+                    id: "3-1",
                     icon: <ArrowDownCircle className="w-4 h-4" />,
-                    label: 'Nhập kho',
-                    path: '/warehouse/import',
+                    label: "Nhập kho",
+                    path: "/warehouse/import",
                 },
                 {
-                    id: '3-2',
+                    id: "3-2",
                     icon: <ArrowUpCircle className="w-4 h-4" />,
-                    label: 'Xuất kho',
-                    path: '/warehouse/export',
+                    label: "Xuất kho",
+                    path: "/warehouse/export",
                 },
                 {
-                    id: '3-3',
+                    id: "3-3",
                     icon: <BarChart3 className="w-4 h-4" />,
-                    label: 'Thống kê kho',
-                    path: '/warehouse/statistic',
-                }
-            ]
+                    label: "Thống kê kho",
+                    path: "/warehouse/statistic",
+                },
+            ],
         },
         {
-            id: '4',
-            icon: <SquareUser className="w-5 h-5" />,
-            path: "/account",
-            label: 'Quản lý tài khoản'
-        }
+            id: "4",
+            icon: <Layers className="w-5 h-5" />,
+            label: "Quản lý nguyên vật liệu",
+            hasSubmenu: true,
+            submenu: [
+                {
+                    id: "4-1",
+                    icon: <BarChart3 className="w-4 h-4" />,
+                    label: "Dashboard",
+                    path: "/ingredient/dashboard",
+                }
+            ],
+        },
+        {
+            id: "5",
+            icon: <Users className="w-5 h-5" />,
+            label: "Quản lý tài khoản",
+            hasSubmenu: true,
+            submenu: [
+                {
+                    id: "5-1",
+                    icon: <BarChart3 className="w-4 h-4" />,
+                    label: "Dashboard",
+                    path: "/account/dashboard",
+                },
+                {
+                    id: "5-2",
+                    icon: <UserPlus className="w-4 h-4" />,
+                    label: "Thêm tài khoản",
+                    path: "/account/create",
+                },
+            ],
+        },
     ];
 
     const toggleSubmenu = (itemId: string | null) => {
@@ -93,67 +127,87 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
     return (
         <aside
             className={cn(
-                'bg-slate-900 text-white transition-all duration-300 ease-in-out flex flex-col',
+                'bg-gradient-to-b from-slate-50 to-blue-50 text-slate-800 transition-all duration-300 ease-in-out flex flex-col shadow-lg border-r border-slate-200',
                 collapsed ? 'w-20' : 'w-52'
             )}
         >
             {/* Logo */}
-            <div className="h-16 flex items-center justify-center border-b border-slate-700">
-                <div className="text-2xl font-bold">
-                    {collapsed ? <img src={'/image.png'} alt='Ảnh bún bò thumbnail' loading='lazy'/> : 'Bún Bò Ha'}
+            <div className="h-16 flex items-center justify-center border-b border-slate-300 bg-white/50 backdrop-blur-sm">
+                <div className="text-2xl font-bold text-blue-600">
+                    {collapsed ? <img src={'/image.png'} alt='Ảnh bún bò thumbnail' loading='lazy' /> : 'Bún Bò Ha'}
                 </div>
             </div>
 
             {/* Menu */}
             <nav className="flex-1 overflow-y-auto py-4">
-                {menuItems.map((item) => (
-                    <div key={item.id}>
-                        {/* Main Menu Item */}
-                        <div
-                            className={cn(
-                                'flex items-center gap-3 px-4 py-3 hover:bg-slate-800 cursor-pointer transition-colors',
-                                collapsed && 'justify-center'
-                            )}
-                            onClick={() =>
-                                item.hasSubmenu
-                                    ? toggleSubmenu(item.id)
-                                    : handleNavigate(item.path)
-                            }
-                        >
-                            <span>{item.icon}</span>
-                            {!collapsed && (
-                                <>
-                                    <span className="text-sm font-medium flex-1">{item.label}</span>
-                                    {item.hasSubmenu && (
-                                        <span className="transition-transform duration-200">
-                                            {openSubmenu === item.id ? (
-                                                <ChevronDown className="w-4 h-4" />
-                                            ) : (
-                                                <ChevronRight className="w-4 h-4" />
-                                            )}
-                                        </span>
-                                    )}
-                                </>
+                {menuItems.map((item) => {
+                    const isActiveParent =
+                        item.path && path_name === (item.path);
+
+                    const isActiveSub =
+                        item.hasSubmenu &&
+                        item.submenu?.some((sub) => path_name === (sub.path));
+
+                    const isExpanded = openSubmenu === item.id || isActiveSub;
+
+                    return (
+                        <div key={item.id}>
+                            {/* Main Menu Item */}
+                            <div
+                                className={cn(
+                                    'flex items-center gap-3 px-4 py-3 hover:bg-blue-100 cursor-pointer transition-colors rounded-lg mx-2',
+                                    collapsed && 'justify-center',
+                                    (isActiveParent || isActiveSub) && 'bg-blue-500 text-white shadow-md'
+                                )}
+                                onClick={() =>
+                                    item.hasSubmenu
+                                        ? toggleSubmenu(item.id)
+                                        : handleNavigate(item.path)
+                                }
+                            >
+                                <span>{item.icon}</span>
+                                {!collapsed && (
+                                    <>
+                                        <span className="text-sm font-medium flex-1">{item.label}</span>
+                                        {item.hasSubmenu && (
+                                            <span className="transition-transform duration-200">
+                                                {isExpanded ? (
+                                                    <ChevronDown className="w-4 h-4" />
+                                                ) : (
+                                                    <ChevronRight className="w-4 h-4" />
+                                                )}
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Submenu */}
+                            {item.hasSubmenu && !collapsed && isExpanded && (
+                                <div className="bg-white/30 backdrop-blur-sm mx-2 rounded-lg mt-1">
+                                    {item.submenu.map((subItem) => {
+                                        const isActiveSubItem = path_name === (subItem.path);
+                                        return (
+                                            <div
+                                                key={subItem.id}
+                                                className={cn(
+                                                    "flex items-center gap-3 px-4 py-2.5 pl-12 cursor-pointer transition-colors rounded-lg mx-2 my-1",
+                                                    isActiveSubItem
+                                                        ? "bg-blue-400 text-white shadow-sm"
+                                                        : "hover:bg-blue-50 text-slate-700"
+                                                )}
+                                                onClick={() => handleNavigate(subItem.path, item.id)}
+                                            >
+                                                <span>{subItem.icon}</span>
+                                                <span className="text-sm">{subItem.label}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             )}
                         </div>
-
-                        {/* Submenu */}
-                        {item.hasSubmenu && !collapsed && openSubmenu === item.id && (
-                            <div className="bg-slate-800/50">
-                                {item.submenu.map((subItem) => (
-                                    <div
-                                        key={subItem.id}
-                                        className="flex items-center gap-3 px-4 py-2.5 pl-12 hover:bg-slate-700 cursor-pointer transition-colors"
-                                        onClick={() => handleNavigate(subItem.path)}
-                                    >
-                                        <span>{subItem.icon}</span>
-                                        <span className="text-sm">{subItem.label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                ))}
+                    );
+                })}
             </nav>
         </aside>
     );

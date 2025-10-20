@@ -1,3 +1,4 @@
+'use client'
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 import { useState } from 'react';
@@ -299,7 +300,7 @@ export default function ModalOrderFood({ isOpen, onClose, orderInfo, onSubmit }:
                                     disabled={creatingOrder}
                                     className="flex-1 px-4 py-2 border rounded-lg bg-gradient-to-r from-gray-200 to-gray-300 hover:from-gray-300 hover:to-gray-400 font-medium disabled:bg-gray-100"
                                 >
-                                    Hủy
+                                    Hủy Đặt
                                 </button>
                                 <button
                                     onClick={handleSubmitOrder}

@@ -1,6 +1,7 @@
+'use client'
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // components/admin/booking/modal-booking.tsx
-'use client'
+
 import { X, Users, User, Phone, ChevronDown } from 'lucide-react';
 import { AlertProps, BookingType, TableType } from '../../../lib/types';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';

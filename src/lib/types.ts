@@ -239,3 +239,16 @@ export interface ConfirmDialogProps {
     cancelText?: string;
     type?: 'danger' | 'warning' | 'info';
 }
+
+
+export interface CancelOrderRequest {
+    id_order: number;
+}
+
+export interface CancelOrderResponse {
+    code: number
+    message?: string
+    result: {
+        is_cancelled: boolean;
+    }
+}

@@ -1,14 +1,17 @@
+'use client'
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useState } from 'react';
 import { X, Users, User, Plus, Minus, Trash2, Edit2, Save, XCircle, Search, DollarSign, ShoppingBag, FileText, Clock } from 'lucide-react';
 import { useGetOrderDetail } from '@/hooks/booking-orders';
 import { Spinner } from '@/components/ui/spinner';
-import { AlertProps, CreateOrderRequest, DataPropsToModalDetail, FoodItem, OrderItemCreateRequest } from '@/lib/types';
+import { AlertProps, CreateOrderRequest, DataPropsToModalDetail, FoodItem } from '@/lib/types';
 import { removeBookingFromSession } from '@/lib/session-storage-helper';
-import { useCreateUpdateOrder, useLoadFoods } from '@/hooks/order-hook';
+import { useCancelOrder, useCreateUpdateOrder, useLoadFoods } from '@/hooks/order-hook';
 import { useConfirmDialog } from '@/hooks/hook-client';
 import ConfirmDialog from '@/components/modal/confirm-dialog';
+import Alert from '@/components/alert/alert';
+import LoadingModal from '@/components/modal/modal-loading';
 
 interface ModalOrderDetailProps {
     data: DataPropsToModalDetail | null
@@ -17,7 +20,6 @@ interface ModalOrderDetailProps {
     orderId: number;
     tableId: number;
     onReloadTables: () => void;
-    onAlert: (alert: AlertProps) => void;
 }
 
 const orderStatusText: Record<string, string> = {
@@ -42,17 +44,18 @@ export default function ModalOrderDetail({
     onClose,
     tableId,
     orderId,
-    onReloadTables,
-    onAlert
+    onReloadTables
 }: ModalOrderDetailProps) {
     const { getOrderDetail, orderDetail, isLoading } = useGetOrderDetail();
     const { foods, isLoading: loadingFoods, error: foodError } = useLoadFoods();
     const { createOrder: updateOrder, isLoading: isUpdating } = useCreateUpdateOrder();
     const { isOpenDialog, config, showConfirm, hideConfirm } = useConfirmDialog();
+    const { cancelOrder, cancelLoading, errorCancel, dataCancel } = useCancelOrder()
     const [loadError, setLoadError] = useState(false);
     const [selectedType, setSelectedType] = useState('Tất cả');
-
-    console.log("isUpdating: ",isUpdating)
+    const [alert, setAlert] = useState<AlertProps | null>(null)
+    const [localLoading, setLocalLoading] = useState(false)
+    const [textModalLoading, setTextModalLoading] = useState<string>('')
 
     // State cho order items (có thể chỉnh sửa)
     const [orderItems, setOrderItems] = useState<FoodItem[]>([]);
@@ -63,6 +66,15 @@ export default function ModalOrderDetail({
     const [searchMenu, setSearchMenu] = useState('');
     const [currentOrderData, setCurrentOrderData] = useState<DataPropsToModalDetail | null>(null);
 
+    useEffect(() => {
+        if (alert) {
+            const timer = setTimeout(() => {
+                setAlert(null);
+            }, alert.duration || 4000);
+
+            return () => clearTimeout(timer);
+        }
+    }, [alert]);
 
     useEffect(() => {
         if (isOpen && tableId) {
@@ -137,7 +149,7 @@ export default function ModalOrderDetail({
     // Cập nhật order
     const handleUpdateOrder = async () => {
         if (!currentOrderData) {
-            onAlert({
+            setAlert({
                 title: 'Lỗi',
                 type: 'error',
                 message: 'Không tìm thấy thông tin đơn hàng!',
@@ -162,9 +174,18 @@ export default function ModalOrderDetail({
                 })),
             };
 
-            console.log('📤 Updating order:', updateData);
+            // console.log('📤 Updating order:', updateData);
 
-            const response = await updateOrder(updateData);
+            // The hook may return either a boolean or an object; accept any and narrow safely
+            await updateOrder(updateData);
+            // updated successfully (optional additional handling)
+            setAlert({
+                title: 'Thành công',
+                type: 'success',
+                message: 'Cập nhật đơn hàng thành công!',
+                duration: 4000,
+            });
+
 
             // Cập nhật lại currentOrderData với dữ liệu mới
             setCurrentOrderData({
@@ -172,27 +193,18 @@ export default function ModalOrderDetail({
                 phone_cus: updateData.phone_number,
                 note_order: updateData.note_order,
                 order_status: updateData.order_status as 'READY' | 'PREPARING' | 'SERVED' | 'COMPLETED' | 'CANCELLED',
-                total_amount: updateData.total_amount,
-                // Nếu response trả về dữ liệu mới, có thể merge vào
-                ...(response || {}),
-            });
-
-            onAlert({
-                title: 'Thành công',
-                type: 'success',
-                message: 'Cập nhật đơn hàng thành công!',
-                duration: 4000,
+                total_amount: updateData.total_amount
             });
 
             // onReloadTables() - không reload table
             // onClose() - không đóng form
 
-            // ✅ Giao diện đã được cập nhật qua setCurrentOrderData
-            // ✅ Form vẫn mở, user có thể tiếp tục chỉnh sửa
+            //  Giao diện đã được cập nhật qua setCurrentOrderData
+            //  Form vẫn mở, user có thể tiếp tục chỉnh sửa
 
         } catch (err) {
-            console.error('❌ Update order failed:', err);
-            onAlert({
+            console.error('Update order failed:', err);
+            setAlert({
                 title: 'Lỗi',
                 type: 'error',
                 message: 'Cập nhật đơn hàng thất bại!',
@@ -272,7 +284,7 @@ export default function ModalOrderDetail({
         }
 
         // TODO: Call API to add item to order
-        console.log('Add item:', menuItem);
+        // console.log('Add item:', menuItem);
     };
 
     // Thanh toán
@@ -281,7 +293,7 @@ export default function ModalOrderDetail({
             // TODO: Call API thanh toán
             console.log('Payment:', { orderId, tableId, total: calculateTotal() });
 
-            onAlert({
+            setAlert({
                 title: 'Thành công',
                 type: 'success',
                 message: 'Thanh toán thành công!',
@@ -289,11 +301,11 @@ export default function ModalOrderDetail({
             });
 
             removeBookingFromSession(tableId);
-            onReloadTables();
+            // onReloadTables();
             onClose();
         } catch (err) {
             console.error('❌ Payment failed:', err);
-            onAlert({
+            setAlert({
                 title: 'Lỗi',
                 type: 'error',
                 message: 'Thanh toán thất bại!',
@@ -304,21 +316,41 @@ export default function ModalOrderDetail({
 
     // Hủy đơn
     const handleCancelOrder = () => {
-        if (confirm('Bạn có chắc muốn hủy đơn hàng này?')) {
-            // TODO: Call API cancel order
-
-            removeBookingFromSession(tableId);
-
-            onAlert({
-                title: 'Thành công',
-                type: 'success',
-                message: 'Đơn hàng đã được hủy!',
-                duration: 4000,
-            });
-
-            onReloadTables();
-            onClose();
-        }
+        showConfirm({
+            title: 'Hủy đơn hàng',
+            message: 'Bạn có chắc muốn hủy đơn này?',
+            confirmText: 'Xóa',
+            type: 'danger',
+            onConfirm: async () => {
+                removeBookingFromSession(tableId);
+                // Pass the expected request shape to the hook
+                const response = await cancelOrder({ id_order: orderId });
+                if (response.code == 100) {
+                    setAlert({
+                        title: 'Thành công',
+                        type: 'success',
+                        message: 'Đơn hàng đã được hủy!',
+                        duration: 4000,
+                    });
+                    setTextModalLoading('Đang quay về trang đặt bàn')
+                    setLocalLoading(true)
+                    setTimeout(() => {
+                        setTextModalLoading('')
+                        setLocalLoading(false)
+                        onClose();
+                        onReloadTables();
+                    }, 2000)
+                } else {
+                    setAlert({
+                        title: 'Lỗi',
+                        type: 'error',
+                        message: 'Hủy đơn thất bại!',
+                        duration: 4000,
+                    });
+                }
+                // onReloadTables();
+            }
+        });
     };
 
     if (!isOpen) return null;
@@ -326,6 +358,23 @@ export default function ModalOrderDetail({
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col">
+                {/* Hiển thị Alert */}
+                {alert && (
+                    <div className="fixed top-4 right-4 z-[100]">
+                        <Alert
+                            title={alert.title}
+                            type={alert.type}
+                            message={alert.message}
+                            icon={alert.icon}
+                            duration={alert.duration}
+                            onClose={() => setAlert(null)}
+                        />
+                    </div>
+                )}
+                <LoadingModal
+                    open={localLoading}
+                    text={textModalLoading}
+                />
                 {/* Confirm Dialog */}
                 <ConfirmDialog
                     isOpenDialog={isOpenDialog}

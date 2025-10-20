@@ -1,7 +1,7 @@
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcherWithAutoRefresh } from "@/hooks/fetcher-with-auto-refresh";
-import { CreateOrderRequest, CreateOrderResponse, LoadFoodResponse } from "@/lib/types";
+import { CancelOrderRequest, CancelOrderResponse, CreateOrderRequest, CreateOrderResponse, LoadFoodResponse } from "@/lib/types";
 
 // Load danh sách món ăn
 export function useLoadFoods() {
@@ -21,7 +21,7 @@ export function useLoadFoods() {
 // Tạo order món ăn
 export function useCreateUpdateOrder() {
     const { trigger, isMutating, error, data } = useSWRMutation<
-        CreateOrderResponse,
+        CreateOrderResponse | boolean,
         Error,
         string,
         CreateOrderRequest
@@ -35,5 +35,24 @@ export function useCreateUpdateOrder() {
         isLoading: isMutating,
         error,
         data,
+    };
+}
+
+export function useCancelOrder() {
+    const { trigger, isMutating, error, data } = useSWRMutation<
+        CancelOrderResponse,
+        Error,
+        string,
+        CancelOrderRequest
+    >(
+        `${process.env.NEXT_PUBLIC_URL_BACKEND}/api/table/order/cancel`,
+        async (url, { arg }) => fetcherWithAutoRefresh(url, { method: "POST", body: arg })
+    );
+
+    return {
+        cancelOrder: trigger,   // Hàm gọi để hủy order
+        cancelLoading: isMutating,  // Trạng thái loading
+        errorCancel: error,                  // Lỗi (nếu có)
+        dataCancel: data,                   // Kết quả trả về { is_cancelled: true }
     };
 }

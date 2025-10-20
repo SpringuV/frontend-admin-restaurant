@@ -4,7 +4,7 @@ import { BookingSessionInfo } from "./types";
 const SESSION_BOOKINGS_KEY = 'booked_tables';
 
 /**
- * Lưu thông tin booking vào sessionStorage
+ * Lưu thông tin booking vào localStorage
  * Lưu dạng mảng để hỗ trợ nhiều bàn
  */
 export function saveBookingToSession(booking: BookingSessionInfo): void {
@@ -22,7 +22,7 @@ export function saveBookingToSession(booking: BookingSessionInfo): void {
             bookings.push(booking);
         }
         
-        sessionStorage.setItem(SESSION_BOOKINGS_KEY, JSON.stringify(bookings));
+        localStorage.setItem(SESSION_BOOKINGS_KEY, JSON.stringify(bookings));
         console.log('✅ Booking saved to session:', booking);
     } catch (error) {
         console.error('❌ Failed to save booking to session:', error);
@@ -30,11 +30,11 @@ export function saveBookingToSession(booking: BookingSessionInfo): void {
 }
 
 /**
- * Lấy tất cả bookings từ sessionStorage
+ * Lấy tất cả bookings từ localStorage
  */
 export function getBookingsFromSession(): BookingSessionInfo[] {
     try {
-        const data = sessionStorage.getItem(SESSION_BOOKINGS_KEY);
+        const data = localStorage.getItem(SESSION_BOOKINGS_KEY);
         if (!data) return [];
         
         return JSON.parse(data) as BookingSessionInfo[];
@@ -73,7 +73,7 @@ export function removeBookingFromSession(tableId: number): void {
         const bookings = getBookingsFromSession();
         const filtered = bookings.filter(b => b.id_table !== tableId);
         
-        sessionStorage.setItem(SESSION_BOOKINGS_KEY, JSON.stringify(filtered));
+        localStorage.setItem(SESSION_BOOKINGS_KEY, JSON.stringify(filtered));
         console.log('🗑️ Booking removed from session for table', tableId);
     } catch (error) {
         console.error('❌ Failed to remove booking from session:', error);
@@ -85,7 +85,7 @@ export function removeBookingFromSession(tableId: number): void {
  */
 export function clearAllBookingsFromSession(): void {
     try {
-        sessionStorage.removeItem(SESSION_BOOKINGS_KEY);
+        localStorage.removeItem(SESSION_BOOKINGS_KEY);
         console.log('🗑️ All bookings cleared from session');
     } catch (error) {
         console.error('❌ Failed to clear bookings from session:', error);

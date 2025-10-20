@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+'use client'
+import React, { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,12 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useLogin } from '@/hooks/user';
 import { AlertProps, PayloadToken } from '@/lib/types';
 import { jwtDecode } from 'jwt-decode';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Alert from '@/components/alert/alert';
 import LoadingModal from '@/components/modal/modal-loading';
+import { useAuth } from '../providers/auth-rovider';
+import { Spinner } from '../ui/spinner';
 
-const Login = ()=>{
-     const route = useRouter()
+const Login = () => {
+    const { isAuthenticated, isLoadingAuth } = useAuth();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+
+    const route = useRouter()
     const [showPassword, setShowPassword] = useState(false);
     const [showForgotForm, setShowForgotForm] = useState(false);
     const [localLoading, setLocalLoading] = useState(false)
@@ -24,9 +32,28 @@ const Login = ()=>{
     });
     const [forgotEmail, setForgotEmail] = useState('');
     const [alert, setAlert] = useState<AlertProps | null>(null)
-
-    // login
     const { login, isLoading, error, data } = useLogin();
+    
+    // login
+    useEffect(() => {
+        // Nếu đã đăng nhập, redirect về trang ban đầu hoặc admin
+        if (!isLoading && isAuthenticated) {
+            const redirectUrl = searchParams.get('redirect') || '/admin';
+            router.push(redirectUrl);
+        }
+    }, [isAuthenticated, isLoadingAuth, router, searchParams]);
+
+    if (isLoadingAuth) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Spinner className="w-12 h-12" />
+            </div>
+        );
+    }
+
+    if (isAuthenticated) {
+        return null; // Đã redirect
+    }
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -144,7 +171,7 @@ const Login = ()=>{
                                         required
                                         className="border-gray-300 focus:border-red-500 focus:ring-red-500 pr-10"
                                     />
-                                    
+
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}

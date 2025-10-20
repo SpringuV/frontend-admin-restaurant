@@ -5,14 +5,14 @@ import { useRouter, usePathname } from 'next/navigation';
 
 interface AuthContextType {
     isAuthenticated: boolean;
-    isLoading: boolean;
+    isLoadingAuth: boolean;
     token: string | null;
     logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
     isAuthenticated: false,
-    isLoading: true,
+    isLoadingAuth: true,
     token: null,
     logout: () => { },
 });
@@ -21,7 +21,7 @@ export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingAuth, setIsLoading] = useState(true);
     const [token, setToken] = useState<string | null>(null);
     const router = useRouter();
     const pathname = usePathname();
@@ -53,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, isLoading, token, logout }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoadingAuth, token, logout }}>
             {children}
         </AuthContext.Provider>
     );

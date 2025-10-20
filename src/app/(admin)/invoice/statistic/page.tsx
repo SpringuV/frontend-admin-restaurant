@@ -1,9 +1,17 @@
-'use client'
-const StatisticPage = ()=> {
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: 'Thống kê hóa đơn',
+    description: 'Trang thống kê hóa đơn',
+};
+
+
+const StatisticInvoicePage = () => {
+
     return (
         <>
-            StatisticPage
+            StatisticPage Invoice
         </>
     )
 }
-export default StatisticPage
+export default StatisticInvoicePage
