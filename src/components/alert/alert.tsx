@@ -29,7 +29,7 @@ const Alert: React.FC<AlertProps> = ({ title, message, icon, type = 'info', dura
     if (!show) return null;
     return (
         <>
-            <div className="fixed z-50 right-5 top-20">
+            <div className="fixed z-[104] right-5 top-28">
                 <div className={`flex items-start gap-3 p-4 border-l-4 rounded-md shadow-md ${colorMap[type]} max-w-md w-full`}>
                     <div className="mt-1">
                         {icon ?? iconMap[type]}

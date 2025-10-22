@@ -74,6 +74,18 @@ async function refreshToken(): Promise<string | null> {
 /**
  * Fetcher toàn cục tự động refresh token
  * Nếu backend trả về { code: 103 } → refresh token và retry request
+ * Hàm này là một fetch wrapper thông minh, dùng để:
+    Gắn token vào header,
+    Tự động refresh token nếu bị hết hạn (code === 103),
+    Retry lại request một lần sau khi có token mới.
+    Luồng hoạt động tóm tắt:
+    Gọi fetch() → gắn Authorization: Bearer <token>
+    Nếu response JSON có code === 103 → token hết hạn
+    Gọi refreshToken() để lấy token mới
+    Nếu refresh thành công → retry lại request ban đầu chỉ 1 lần
+    Nếu refresh thất bại → handleLogout() để logout và redirect login
+    Trả về dữ liệu (data) nếu thành công.
+    💡 retry = true đảm bảo chỉ thử lại 1 lần duy nhất để tránh vòng lặp vô hạn.
  */
 export const fetcherWithAutoRefresh = async <T>(
     url: string,

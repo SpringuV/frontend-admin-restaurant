@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { X, Plus, Minus, ShoppingCart, Search } from 'lucide-react';
 
 import { Spinner } from '@/components/ui/spinner';
-import { useCreateUpdateOrder, useLoadFoods } from '@/hooks/order-hook';
 import { CreateOrderRequest, FoodItem, ModalOrderFoodProps, SelectedFood } from '@/lib/types';
+import { useCreateUpdateOrder, useLoadFoods } from '@/hooks/booking-orders';
 
 
 export default function ModalOrderFood({ isOpen, onClose, orderInfo, onSubmit }: ModalOrderFoodProps) {

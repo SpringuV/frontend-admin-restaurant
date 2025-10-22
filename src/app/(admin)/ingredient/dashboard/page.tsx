@@ -2,7 +2,7 @@ import IngredientDashboard from "@/components/admin/ingredient/ingredient-dashbo
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: 'Ngyên vật liệu - Dashboard',
+    title: 'Nguyên liệu - Dashboard',
     description: 'Trang quản lý nguyên vật liệu',
 };
 

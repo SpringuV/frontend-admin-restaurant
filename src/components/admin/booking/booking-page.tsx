@@ -136,7 +136,7 @@ const Booking = () => {
                 )
             }
 
-            <div className="min-h-screen h-full w-full bg-gradient-to-br from-slate-50 to-blue-50 md:p-4">
+            <div className="min-h-screen h-full w-full bg-gradient-to-br from-blue-50 to-indigo-100 md:p-4">
                 {/* Header */}
                 <div className="max-w-7xl mx-auto mb-8">
                     <div className="bg-white/70 backdrop-blur-sm rounded-xl shadow-lg p-6 border border-slate-200">

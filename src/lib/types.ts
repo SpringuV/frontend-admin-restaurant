@@ -252,3 +252,86 @@ export interface CancelOrderResponse {
         is_cancelled: boolean;
     }
 }
+
+// ===== Ingredient Types =====
+
+export enum UnitOfMeasurement {
+    KG = 'KG',
+    GRAM = 'GRAM',
+    CÁI = 'CÁI',
+    BÓ = 'BÓ',
+    THÙNG = 'THÙNG',
+    HỘP = 'HỘP',
+    TÚI = 'TÚI',
+    CHIẾC = 'CHIẾC',
+    VIEN = 'VIÊN',
+    ĐÔI = 'ĐÔI',
+    LỌ = 'LỌ',
+    BÌNH = 'BÌNH'
+}
+
+export interface IngredientType {
+    id_ingredient: string;
+    name_ingredients: string;
+    prices: number;
+    quantity: number;
+    unit_of_measurement: UnitOfMeasurement;
+    description: string;
+    supplier: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface CreateIngredientRequest {
+    name_ingredients: string;
+    prices: number;
+    quantity: number;
+    unit_of_measurement: UnitOfMeasurement;
+    description?: string;
+    supplier?: string;
+}
+
+export interface UpdateIngredientRequest {
+    id_ingredient: string;
+    prices: number;
+    quantity: number;
+    unit_of_measurement: UnitOfMeasurement;
+    description?: string;
+    supplier?: string;
+}
+
+export interface CreateIngredientResponse {
+    code: number;
+    message: string;
+    result: IngredientType;
+}
+
+export interface UpdateIngredientResponse {
+    code: number;
+    message: string;
+    result: IngredientType;
+}
+
+export interface DeleteIngredientResponse {
+    code: number;
+    message: string;
+    result: {
+        is_deleted: boolean;
+        message: string;
+    };
+}
+
+// export interface DeleteIngredientMappingResponse {
+//     code: number;
+//     message: string;
+//     result: {
+//         is_deleted: boolean;
+//         mapping_deleted: boolean;
+//     };
+// }
+
+export interface LoadIngredientsResponse {
+    code: number;
+    message: string;
+    result: IngredientType[];
+}
