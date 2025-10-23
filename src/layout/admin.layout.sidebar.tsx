@@ -8,7 +8,6 @@ import {
     ChevronRight,
     DollarSign,
     ArrowDownCircle,
-    ArrowUpCircle,
     BarChart3,
     Users,
     UserPlus,
@@ -66,17 +65,11 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
                 {
                     id: "3-1",
                     icon: <ArrowDownCircle className="w-4 h-4" />,
-                    label: "Nhập kho",
-                    path: "/warehouse/import",
+                    label: "Nhập/xuất kho",
+                    path: "/warehouse/import-export",
                 },
                 {
                     id: "3-2",
-                    icon: <ArrowUpCircle className="w-4 h-4" />,
-                    label: "Xuất kho",
-                    path: "/warehouse/export",
-                },
-                {
-                    id: "3-3",
                     icon: <BarChart3 className="w-4 h-4" />,
                     label: "Thống kê kho",
                     path: "/warehouse/statistic",
@@ -127,13 +120,13 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
     return (
         <aside
             className={cn(
-                'bg-gradient-to-b from-slate-50 to-blue-50 text-slate-800 transition-all duration-300 ease-in-out flex flex-col shadow-lg border-r border-slate-200',
+                'bg-gradient-to-b from-slate-50 to-red-50 text-slate-800 transition-all duration-300 ease-in-out flex flex-col shadow-lg border-r border-slate-200',
                 collapsed ? 'w-20' : 'w-52'
             )}
         >
             {/* Logo */}
             <div className="h-16 flex items-center justify-center border-b border-slate-300 bg-white/50 backdrop-blur-sm">
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-red-600">
                     {collapsed ? <img src={'/image.png'} alt='Ảnh bún bò thumbnail' loading='lazy' /> : 'Bún Bò Ha'}
                 </div>
             </div>
@@ -155,9 +148,9 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
                             {/* Main Menu Item */}
                             <div
                                 className={cn(
-                                    'flex items-center gap-3 px-4 py-3 hover:bg-blue-100 cursor-pointer transition-colors rounded-lg mx-2',
+                                    'flex items-center gap-3 px-4 py-3 hover:bg-red-100 cursor-pointer transition-colors rounded-lg mx-2',
                                     collapsed && 'justify-center',
-                                    (isActiveParent || isActiveSub) && 'bg-blue-500 text-white shadow-md'
+                                    (isActiveParent || isActiveSub) && 'bg-red-500 text-white shadow-md'
                                 )}
                                 onClick={() =>
                                     item.hasSubmenu
@@ -193,8 +186,8 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
                                                 className={cn(
                                                     "flex items-center gap-3 px-4 py-2.5 pl-12 cursor-pointer transition-colors rounded-lg mx-2 my-1",
                                                     isActiveSubItem
-                                                        ? "bg-blue-400 text-white shadow-sm"
-                                                        : "hover:bg-blue-50 text-slate-700"
+                                                        ? "bg-red-400 text-white shadow-sm"
+                                                        : "hover:bg-red-50 text-slate-700"
                                                 )}
                                                 onClick={() => handleNavigate(subItem.path, item.id)}
                                             >

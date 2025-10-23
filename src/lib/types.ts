@@ -321,17 +321,68 @@ export interface DeleteIngredientResponse {
     };
 }
 
-// export interface DeleteIngredientMappingResponse {
-//     code: number;
-//     message: string;
-//     result: {
-//         is_deleted: boolean;
-//         mapping_deleted: boolean;
-//     };
-// }
+export interface LoadSupplierAndIngredientResponse {
+    code: number
+    message?: string
+    result: {
+        list_name_supplier_and_ingredient_response: {
+            name_supplier: string
+            ingredient_of_warehouse: {
+                name_ingredients: string
+                prices: number
+                quantity: number
+            }
+        }[]
+    }
+}
 
 export interface LoadIngredientsResponse {
     code: number;
-    message: string;
+    message?: string;
     result: IngredientType[];
+}
+
+export interface InventoryTransactionRequest {
+    quantity: number; // số lượng nhập/xuất
+    type: 'IMPORT' | 'EXPORT'; // "IMPORT" hoặc "EXPORT"
+    note: string; // tùy chọn
+    id_user: string;
+    name_ingredients: string;
+    name_supplier: string;
+    code_warehouse: string;
+}
+
+export interface ImportExportRequest {
+    code_warehouse: string;
+    name_supplier: string;
+    name_ingredients: string;
+    quantity: number;
+    note: string;
+    type: 'IMPORT' | 'EXPORT';
+    id_user: string | null;
+}
+
+export interface WarehouseType {
+    code_warehouse: string;
+    name_warehouse: string;
+    address_warehouse: string;
+}
+
+export interface LoadInventoryTransactionResponse {
+    id: number
+    quantity: number
+    note: string
+    type: "EXPORT" | "IMPORT"
+    created_at: string
+    user_response: {
+        id_user: string
+        full_name: string
+    }
+    ingredient_response: {
+        id_ingredient: string,
+        name_ingredients: string,
+        prices: number,
+        unit_of_measurement: UnitOfMeasurement,
+        supplier: string
+    }
 }

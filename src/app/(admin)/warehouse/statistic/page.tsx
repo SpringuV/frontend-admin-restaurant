@@ -1,3 +1,4 @@
+import InventoryHistory from "@/components/admin/warehouse/inventory-dashboard";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -9,7 +10,7 @@ export const metadata: Metadata = {
 const StatisticPage = ()=> {
     return (
         <>
-            StatisticPage
+            <InventoryHistory />
         </>
     )
 }

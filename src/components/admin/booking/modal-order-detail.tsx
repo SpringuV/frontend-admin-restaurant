@@ -359,16 +359,14 @@ export default function ModalOrderDetail({
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col">
                 {/* Hiển thị Alert */}
                 {alert && (
-                    <div className="fixed top-4 right-4 z-[100]">
-                        <Alert
-                            title={alert.title}
-                            type={alert.type}
-                            message={alert.message}
-                            icon={alert.icon}
-                            duration={alert.duration}
-                            onClose={() => setAlert(null)}
-                        />
-                    </div>
+                    <Alert
+                        title={alert.title}
+                        type={alert.type}
+                        message={alert.message}
+                        icon={alert.icon}
+                        duration={alert.duration}
+                        onClose={() => setAlert(null)}
+                    />
                 )}
                 <LoadingModal
                     open={localLoading}
