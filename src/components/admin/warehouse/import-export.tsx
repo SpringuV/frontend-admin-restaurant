@@ -23,13 +23,13 @@ interface IngredientWarehouseResponse {
 
 interface IngredientOfSupplierResponse {
     name_supplier: string;
-    ingredient_of_warehouse: IngredientWarehouseResponse | IngredientWarehouseResponse[];
+    ingredient_of_warehouse: IngredientWarehouseResponse[];
 }
 
 
 const ImportExport = () => {
     const [transactionType, setTransactionType] = useState<'IMPORT' | 'EXPORT'>('IMPORT');
-    const [selectedWarehouse, setSelectedWarehouse] = useState('');
+    const [selectedWarehouse, setSelectedWarehouse] = useState<string | null>('');
     const [selectedSupplier, setSelectedSupplier] = useState('');
     const [selectedIngredient, setSelectedIngredient] = useState('');
     const [quantity, setQuantity] = useState('');
@@ -39,36 +39,27 @@ const ImportExport = () => {
     const [availableIngredients, setAvailableIngredients] = useState<IngredientWarehouseResponse[]>([]);
     const [selectedIngredientDetails, setSelectedIngredientDetails] = useState<IngredientWarehouseResponse | null>(null);
 
-    // Load data from API
-    const { supplier_and_ingredients, loadingSupplier, supplierError, reloadSupplier } = useLoadSupplierAndIngredient();
+    // Load warehouses
     const { warehouses, loadingWarehouses, warehouseError } = useLoadWarehouses();
+
+    // Load suppliers and ingredients based on selected warehouse
+    const { supplier_and_ingredients, loadingSupplier, supplierError, reloadSupplier } = useLoadSupplierAndIngredient(selectedWarehouse ?? undefined);
+
     const { createImportExport, loading: submitting, error: submitError } = useCreateImportExport();
 
-    // Extract suppliers list from API response, ensuring correct typing
+    // Extract suppliers list from API response
     const suppliers: IngredientOfSupplierResponse[] = useMemo(() => {
-        const list = supplier_and_ingredients?.result;
-        if (!list) return [];
+        if (!supplier_and_ingredients?.result || !selectedWarehouse) return [];
+        return supplier_and_ingredients.result;
+    }, [supplier_and_ingredients, selectedWarehouse]);
 
-        return list.map((supplier) => ({
-            ...supplier,
-            ingredient_of_warehouse: Array.isArray(supplier.ingredient_of_warehouse)
-                ? supplier.ingredient_of_warehouse
-                : [supplier.ingredient_of_warehouse]
-        }));
-    }, [supplier_and_ingredients]);
     // Handle supplier selection and load ingredients
     useEffect(() => {
-        if (selectedSupplier) {
+        if (selectedSupplier && suppliers.length > 0) {
             const supplierData = suppliers.find(
                 (sup: IngredientOfSupplierResponse) => sup.name_supplier === selectedSupplier
             );
-            setAvailableIngredients(
-                supplierData?.ingredient_of_warehouse
-                    ? Array.isArray(supplierData.ingredient_of_warehouse)
-                        ? supplierData.ingredient_of_warehouse
-                        : [supplierData.ingredient_of_warehouse]
-                    : []
-            );
+            setAvailableIngredients(supplierData?.ingredient_of_warehouse || []);
             setSelectedIngredient('');
             setSelectedIngredientDetails(null);
         } else {
@@ -99,6 +90,16 @@ const ImportExport = () => {
     };
 
     const handleSubmit = async () => {
+
+        if (!selectedWarehouse) {
+            setAlert({
+                title: 'Lỗi',
+                message: "Bạn chưa chọn nhà kho",
+                type: 'error'
+            });
+            return;
+        }
+
         if (!isFormValid) return;
 
         const selectedWarehouseData = warehouses?.find(
@@ -148,7 +149,7 @@ const ImportExport = () => {
         !errorMessage;
 
     // Loading state
-    if (loadingSupplier || loadingWarehouses) {
+    if (loadingWarehouses) {
         return (
             <div className="max-w-4xl mx-auto">
                 <Card className="shadow-xl border-0">
@@ -164,7 +165,7 @@ const ImportExport = () => {
     }
 
     // Error state
-    if (supplierError || warehouseError) {
+    if (warehouseError) {
         return (
             <div className="max-w-4xl mx-auto">
                 <Alert
@@ -251,6 +252,9 @@ const ImportExport = () => {
                                         setSelectedWarehouse(value);
                                         setSelectedSupplier('');
                                         setSelectedIngredient('');
+                                        setQuantity('');
+                                        setNote('');
+                                        setErrorMessage('');
                                     }}
                                 >
                                     <SelectTrigger className="!h-16 border-2 text-wrap text-center !py-1 w-full focus:border-blue-500">
@@ -286,21 +290,23 @@ const ImportExport = () => {
                                         setSelectedSupplier(value);
                                         setSelectedIngredient('');
                                     }}
-                                    disabled={!selectedWarehouse}
+                                    disabled={!selectedWarehouse || loadingSupplier}
                                 >
                                     <SelectTrigger
                                         className={cn(
                                             "!h-16 border-2 w-full text-wrap text-center",
-                                            !selectedWarehouse
+                                            !selectedWarehouse || loadingSupplier
                                                 ? "bg-gray-100 cursor-not-allowed"
                                                 : "focus:border-blue-500"
                                         )}
                                     >
                                         <SelectValue
                                             placeholder={
-                                                selectedWarehouse
-                                                    ? "-- Chọn nhà cung cấp --"
-                                                    : "Vui lòng chọn kho trước"
+                                                loadingSupplier
+                                                    ? "Đang tải..."
+                                                    : selectedWarehouse
+                                                        ? "-- Chọn nhà cung cấp --"
+                                                        : "Vui lòng chọn kho trước"
                                             }
                                         />
                                     </SelectTrigger>
@@ -491,7 +497,7 @@ const ImportExport = () => {
                             <Button
                                 type="button"
                                 onClick={handleSubmit}
-                                disabled={!isFormValid}
+                                disabled={!isFormValid || submitting}
                                 className={cn(
                                     "flex-1 h-12 text-base font-semibold",
                                     transactionType === 'IMPORT'
@@ -500,7 +506,14 @@ const ImportExport = () => {
                                     "disabled:opacity-50 disabled:cursor-not-allowed"
                                 )}
                             >
-                                {transactionType === 'IMPORT' ? 'Xác Nhận Nhập Kho' : 'Xác Nhận Xuất Kho'}
+                                {submitting ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        Đang xử lý...
+                                    </>
+                                ) : (
+                                    transactionType === 'IMPORT' ? 'Xác Nhận Nhập Kho' : 'Xác Nhận Xuất Kho'
+                                )}
                             </Button>
                         </div>
                     </div>

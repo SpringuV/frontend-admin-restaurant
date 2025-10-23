@@ -14,9 +14,9 @@ import useSWRMutation from "swr/mutation";
 import { fetcherWithAutoRefresh } from "./fetcher-with-auto-refresh";
 
 //hook: lấy danh sách nhà cung cấp và các nguyên liệu thuộc nhà cung cấp đó
-export function useLoadSupplierAndIngredient() {
+export function useLoadSupplierAndIngredient(code_warehouse?: string) {
     const { data, error, isLoading, mutate } = useSWR<LoadSupplierAndIngredientResponse>(
-        `${process.env.NEXT_PUBLIC_URL_BACKEND}/api/ingredients/supplier`,
+        `${process.env.NEXT_PUBLIC_URL_BACKEND}/api/ingredients/supplier/${code_warehouse}`,
         fetcherWithAutoRefresh,
         {
             revalidateOnFocus: false, // Không refresh khi focus vào tab
@@ -46,7 +46,6 @@ export function useLoadIngredients() {
             revalidateOnReconnect: true, // Chỉ refresh khi reconnect
             dedupingInterval: 5000, // Dedupe requests trong 5 giây
             refreshInterval: 0, // Không tự động refresh
-            errorRetryCount: 3, // Retry tối đa 3 lần khi lỗi
         }
     );
 
