@@ -1,13 +1,13 @@
 'use client'
 import React, { useState, useCallback, useMemo } from 'react';
-import { Plus, Search, Edit2, Trash2, Package, DollarSign, TrendingUp, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Package, ArrowLeft } from 'lucide-react';
 import Alert from '@/components/alert/alert';
 import { AlertProps, IngredientType, UnitOfMeasurement } from '@/lib/types';
 import {
-    useLoadIngredients,
     useCreateIngredient,
     useUpdateIngredient,
-    useDeleteIngredient
+    useDeleteIngredient,
+    useLoadIngredients
 } from '@/hooks/ingredient';
 import { formatInstantToVietnamese } from '@/utils/date-utils';
 import { useConfirmDialog } from '@/hooks/hook-client';
@@ -16,7 +16,7 @@ import ConfirmDialog from '@/components/modal/confirm-dialog';
 const UNITS = Object.values(UnitOfMeasurement);
 
 export default function IngredientDashboard() {
-    // Sử dụng hooks để quản lý ingredients
+    // Load tất cả ingredients (master data)
     const { ingredients, isLoading, error, reload } = useLoadIngredients();
     const { createIngredient, isLoading: createLoading } = useCreateIngredient();
     const { updateIngredient, isLoading: updateLoading } = useUpdateIngredient();
@@ -29,12 +29,9 @@ export default function IngredientDashboard() {
     const [searchTerm, setSearchTerm] = useState('');
     const [alert, setAlert] = useState<AlertProps | null>(null);
 
-    console.log("editingItem: ", editingItem)
-
     const [formData, setFormData] = useState({
         name_ingredients: '',
         prices: '',
-        quantity: '',
         unit_of_measurement: UnitOfMeasurement.KG,
         description: '',
         supplier: '',
@@ -52,7 +49,6 @@ export default function IngredientDashboard() {
         setFormData({
             name_ingredients: '',
             prices: '',
-            quantity: '',
             unit_of_measurement: UnitOfMeasurement.KG,
             description: '',
             supplier: '',
@@ -71,7 +67,6 @@ export default function IngredientDashboard() {
         setFormData({
             name_ingredients: item.name_ingredients,
             prices: item.prices.toString(),
-            quantity: item.quantity.toString(),
             unit_of_measurement: item.unit_of_measurement,
             description: item.description || '',
             supplier: item.supplier || '',
@@ -86,7 +81,7 @@ export default function IngredientDashboard() {
     }, [resetForm]);
 
     const handleSubmit = async () => {
-        if (!formData.name_ingredients || !formData.prices || !formData.quantity) {
+        if (!formData.name_ingredients || !formData.prices) {
             setAlert({
                 title: 'Lỗi',
                 type: 'error',
@@ -98,11 +93,9 @@ export default function IngredientDashboard() {
 
         try {
             if (editingItem) {
-                // Cập nhật ingredient
                 await updateIngredient({
                     id_ingredient: editingItem.id_ingredient,
                     prices: parseFloat(formData.prices),
-                    quantity: parseInt(formData.quantity, 10),
                     unit_of_measurement: formData.unit_of_measurement,
                     description: formData.description || undefined,
                     supplier: formData.supplier || undefined,
@@ -113,19 +106,14 @@ export default function IngredientDashboard() {
                     message: 'Cập nhật nguyên liệu thành công!',
                     duration: 3000,
                 });
-
-
             } else {
-                // Tạo ingredient mới
                 await createIngredient({
                     name_ingredients: formData.name_ingredients,
                     prices: parseFloat(formData.prices),
-                    quantity: parseInt(formData.quantity, 10),
                     unit_of_measurement: formData.unit_of_measurement,
                     description: formData.description || undefined,
                     supplier: formData.supplier || undefined,
                 });
-
                 setAlert({
                     title: 'Thành công',
                     type: 'success',
@@ -133,8 +121,6 @@ export default function IngredientDashboard() {
                     duration: 3000,
                 });
             }
-
-            // Đóng modal - SWR sẽ tự động refresh cache
             closeModal();
         } catch (err) {
             console.error('Lỗi khi xử lý ingredient:', err);
@@ -150,7 +136,7 @@ export default function IngredientDashboard() {
     const handleRowClick = useCallback((item: IngredientType) => {
         showConfirm({
             title: 'Xóa nguyên liệu',
-            message: `Bạn có chắc muốn xóa nguyên liệu "${item.name_ingredients}"? Việc này sẽ xóa cả mapping liên quan.`,
+            message: `Bạn có chắc muốn xóa nguyên liệu "${item.name_ingredients}"?`,
             confirmText: 'Xóa',
             type: 'danger',
             onConfirm: () => {
@@ -162,20 +148,11 @@ export default function IngredientDashboard() {
     const handleDelete = useCallback(async (id: string) => {
         try {
             const response = await deleteIngredient(id);
-            console.log("response: ", response)
-            // Kiểm tra kết quả xóa
             if (response?.result.is_deleted) {
-                const message = 'Xóa nguyên liệu thành công!';
-
-                // // Thêm thông tin về mapping nếu có
-                // if (response.result.is_deleted) {
-                //     message += ' Đã xóa mapping liên quan.';
-                // }
-
                 setAlert({
                     title: 'Thành công',
                     type: 'success',
-                    message: message,
+                    message: 'Xóa nguyên liệu thành công!',
                     duration: 3000,
                 });
             } else {
@@ -186,8 +163,6 @@ export default function IngredientDashboard() {
                     duration: 3000,
                 });
             }
-
-            // SWR sẽ tự động refresh cache sau khi xóa thành công
         } catch (err) {
             console.error('Lỗi khi xóa ingredient:', err);
             setAlert({
@@ -203,24 +178,15 @@ export default function IngredientDashboard() {
         setSearchTerm(e.target.value);
     }, []);
 
-    // Memoize computed values để tránh tính toán lại không cần thiết
     const filteredIngredients = useMemo(() => {
         return ingredients.filter(
-            (item) =>
+            (item: IngredientType) =>
                 item.name_ingredients?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 item.supplier?.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [ingredients, searchTerm]);
 
-    const totalValue = useMemo(() => {
-        return ingredients.reduce((sum, item) => sum + item.prices * item.quantity, 0);
-    }, [ingredients]);
-
-    const lowStockItems = useMemo(() => {
-        return ingredients.filter((item) => item.quantity < 20).length;
-    }, [ingredients]);
-
-    // Hiển thị loading state khi đang tải dữ liệu
+    // Loading state
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
@@ -232,7 +198,7 @@ export default function IngredientDashboard() {
         );
     }
 
-    // Hiển thị error state nếu có lỗi
+    // Error state
     if (error) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
@@ -242,7 +208,7 @@ export default function IngredientDashboard() {
                     <p className="text-gray-600 mb-4">{error.message}</p>
                     <button
                         onClick={() => reload()}
-                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
                     >
                         Thử lại
                     </button>
@@ -262,51 +228,32 @@ export default function IngredientDashboard() {
                     onClose={() => setAlert(null)}
                 />
             )}
-            {/* Confirm Dialog */}
             <ConfirmDialog
                 isOpenDialog={isOpenDialog}
                 onClose={hideConfirm}
                 {...config}
                 onConfirm={config.onConfirm ?? (() => { })}
             />
+
             <div className="max-w-7xl mx-auto">
+                {/* Header */}
                 <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                     <h1 className="text-3xl font-bold text-gray-800 mb-2">Quản lý Nguyên Liệu</h1>
-                    <p className="text-gray-600">Quản lý kho nguyên liệu và nhà cung cấp</p>
+                    <p className="text-gray-600">Danh sách nguyên liệu master (không bao gồm số lượng tồn kho)</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600 text-sm">Tổng nguyên liệu</p>
-                                <p className="text-3xl font-bold text-blue-600">{ingredients.length}</p>
-                            </div>
-                            <Package className="w-12 h-12 text-blue-500 opacity-20" />
+                {/* Statistics Card */}
+                <div className="bg-white rounded-lg shadow p-6 mb-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-gray-600 text-sm">Tổng số loại nguyên liệu</p>
+                            <p className="text-3xl font-bold text-blue-600">{ingredients.length}</p>
                         </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600 text-sm">Giá trị kho</p>
-                                <p className="text-3xl font-bold text-green-600">{totalValue.toLocaleString()}đ</p>
-                            </div>
-                            <DollarSign className="w-12 h-12 text-green-500 opacity-20" />
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg shadow p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-600 text-sm">Sắp hết hàng</p>
-                                <p className="text-3xl font-bold text-orange-600">{lowStockItems}</p>
-                            </div>
-                            <TrendingUp className="w-12 h-12 text-orange-500 opacity-20" />
-                        </div>
+                        <Package className="w-12 h-12 text-blue-500 opacity-20" />
                     </div>
                 </div>
 
+                {/* Search and Add Button */}
                 <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                     <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                         <div className="relative flex-1 w-full">
@@ -316,7 +263,7 @@ export default function IngredientDashboard() {
                                 placeholder="Tìm kiếm nguyên liệu, nhà cung cấp..."
                                 value={searchTerm}
                                 onChange={handleSearchChange}
-                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
                             />
                         </div>
                         <div className="flex flex-col md:flex-row gap-2 items-center">
@@ -325,7 +272,7 @@ export default function IngredientDashboard() {
                             </div>
                             <button
                                 onClick={openAddModal}
-                                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 shadow-lg transition whitespace-nowrap"
+                                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 shadow-lg transition whitespace-nowrap"
                             >
                                 <Plus className="w-5 h-5" />
                                 Thêm nguyên liệu
@@ -334,22 +281,22 @@ export default function IngredientDashboard() {
                     </div>
                 </div>
 
+                {/* Table */}
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                            <thead className="bg-gradient-to-r from-orange-500 to-rose-600 text-white">
                                 <tr>
                                     <th className="px-6 py-4 text-center text-sm font-semibold">STT</th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold">Tên nguyên liệu</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold">Giá</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold">Số lượng</th>
+                                    <th className="px-6 py-4 text-left text-sm font-semibold">Giá tham chiếu</th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold">Đơn vị</th>
                                     <th className="px-6 py-4 text-left text-sm font-semibold">Nhà cung cấp</th>
                                     <th className="px-6 py-4 text-center text-sm font-semibold">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {filteredIngredients.map((item, index) => (
+                                {filteredIngredients.map((item: IngredientType, index: number) => (
                                     <tr
                                         key={item.id_ingredient}
                                         className="hover:bg-red-50 hover:cursor-pointer transition-all duration-200 hover:shadow-md"
@@ -366,14 +313,6 @@ export default function IngredientDashboard() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-green-600 font-semibold">{item.prices.toLocaleString()}đ</td>
-                                        <td className="px-6 py-4">
-                                            <span
-                                                className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${item.quantity < 20 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                                                    }`}
-                                            >
-                                                {item.quantity}
-                                            </span>
-                                        </td>
                                         <td className="px-6 py-4">
                                             <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-semibold">
                                                 {item.unit_of_measurement}
@@ -432,7 +371,7 @@ export default function IngredientDashboard() {
                             className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-6 rounded-t-xl flex-shrink-0">
+                            <div className="bg-gradient-to-r from-red-500 to-rose-600 text-white p-6 rounded-t-xl flex-shrink-0">
                                 <div className="flex items-center gap-3">
                                     <button
                                         onClick={closeModal}
@@ -459,7 +398,6 @@ export default function IngredientDashboard() {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-
                                             <div>
                                                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                                                     Ngày tạo
@@ -499,7 +437,7 @@ export default function IngredientDashboard() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Giá (đ) <span className="text-red-500">*</span>
+                                            Giá tham chiếu (đ) <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="number"
@@ -507,26 +445,13 @@ export default function IngredientDashboard() {
                                             min={0}
                                             step={10000}
                                             max={2500000000}
-                                            value={(formData.prices).toLocaleString()}
+                                            value={formData.prices}
                                             onChange={handleInputChange}
                                             placeholder="350000"
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                            Số lượng <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="quantity"
-                                            value={formData.quantity}
-                                            onChange={handleInputChange}
-                                            placeholder="50"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                        />
-                                    </div>
                                     <div>
                                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                                             Đơn vị đo <span className="text-red-500">*</span>
@@ -544,19 +469,20 @@ export default function IngredientDashboard() {
                                             ))}
                                         </select>
                                     </div>
-
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Nhà cung cấp</label>
-                                        <input
-                                            type="text"
-                                            name="supplier"
-                                            value={formData.supplier}
-                                            onChange={handleInputChange}
-                                            placeholder="VD: Công ty TNHH Thực phẩm ABC"
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                        />
-                                    </div>
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Nhà cung cấp</label>
+                                    <input
+                                        type="text"
+                                        name="supplier"
+                                        value={formData.supplier}
+                                        onChange={handleInputChange}
+                                        placeholder="VD: Công ty TNHH Thực phẩm ABC"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none"
+                                    />
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">Mô tả</label>
                                     <textarea
@@ -565,7 +491,7 @@ export default function IngredientDashboard() {
                                         onChange={handleInputChange}
                                         placeholder="Mô tả chi tiết về nguyên liệu..."
                                         rows={3}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none resize-none"
                                     />
                                 </div>
 
@@ -581,7 +507,7 @@ export default function IngredientDashboard() {
                                         type="button"
                                         onClick={handleSubmit}
                                         disabled={createLoading || updateLoading}
-                                        className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 font-medium shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        className="flex-1 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 font-medium shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
                                         {(createLoading || updateLoading) && (
                                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

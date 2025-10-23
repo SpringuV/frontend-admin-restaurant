@@ -46,7 +46,7 @@ const ImportExport = () => {
 
     // Extract suppliers list from API response, ensuring correct typing
     const suppliers: IngredientOfSupplierResponse[] = useMemo(() => {
-        const list = supplier_and_ingredients?.result.list_name_supplier_and_ingredient_response;
+        const list = supplier_and_ingredients?.result;
         if (!list) return [];
 
         return list.map((supplier) => ({

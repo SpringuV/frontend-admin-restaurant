@@ -285,7 +285,6 @@ export interface IngredientType {
 export interface CreateIngredientRequest {
     name_ingredients: string;
     prices: number;
-    quantity: number;
     unit_of_measurement: UnitOfMeasurement;
     description?: string;
     supplier?: string;
@@ -294,7 +293,6 @@ export interface CreateIngredientRequest {
 export interface UpdateIngredientRequest {
     id_ingredient: string;
     prices: number;
-    quantity: number;
     unit_of_measurement: UnitOfMeasurement;
     description?: string;
     supplier?: string;
@@ -324,16 +322,16 @@ export interface DeleteIngredientResponse {
 export interface LoadSupplierAndIngredientResponse {
     code: number
     message?: string
-    result: {
-        list_name_supplier_and_ingredient_response: {
-            name_supplier: string
-            ingredient_of_warehouse: {
-                name_ingredients: string
-                prices: number
-                quantity: number
-            }
-        }[]
-    }
+    result: IngredientOfSupplier[]
+}
+
+export interface IngredientOfSupplier {
+    name_supplier: string;
+    ingredient_of_warehouse: {
+        name_ingredients: string
+        prices: number
+        quantity: number
+    }[]
 }
 
 export interface LoadIngredientsResponse {

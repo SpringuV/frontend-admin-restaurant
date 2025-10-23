@@ -38,7 +38,6 @@ export function useLoadSupplierAndIngredient() {
 // Hook: Lấy danh sách ingredients
 export function useLoadIngredients() {
     const { data, error, isLoading, mutate } = useSWR<LoadIngredientsResponse>(
-        `${process.env.NEXT_PUBLIC_URL_BACKEND}/api/ingredients/supplier`,
         fetcherWithAutoRefresh,
         {
             // Tối ưu hóa SWR để giảm số lần refresh
