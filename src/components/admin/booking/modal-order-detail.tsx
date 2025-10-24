@@ -15,6 +15,7 @@ import LoadingModal from '@/components/modal/modal-loading';
 import PaymentMethodModal from './payment-method-model';
 import { useCreateInvoicePayment } from '@/hooks/booking-orders';
 import { getUserIdFromStorage } from '@/lib/utils';
+import { createPortal } from 'react-dom';
 
 interface ModalOrderDetailProps {
     data: DataPropsToModalDetail | null
@@ -413,10 +414,13 @@ export default function ModalOrderDetail({
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <>
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col">
+            <div 
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" 
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+            >
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col overflow-hidden">
                     {/* Hiển thị Alert */}
                     {alert && (
                         <Alert
@@ -440,23 +444,23 @@ export default function ModalOrderDetail({
                         onConfirm={config.onConfirm ?? (() => { })}
                     />
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-xl">
+                    <div className="flex items-center justify-between p-4 sm:p-6 border-b-2 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white rounded-t-2xl">
                         <div>
-                            <h2 className="text-2xl font-bold flex items-center gap-2">
-                                <FileText className="w-7 h-7" />
+                            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                                <FileText className="w-6 h-6 sm:w-7 sm:h-7" />
                                 Chi tiết order - Bàn {tableId}
                             </h2>
                             {orderDetail && (
-                                <p className="text-sm opacity-90 mt-1">
+                                <p className="text-xs sm:text-sm opacity-90 mt-1">
                                     Order ID: {currentOrderData?.id_order || orderDetail.result.id_order}
                                 </p>
                             )}
                         </div>
                         <button
                             onClick={onClose}
-                            className="hover:bg-white/20 p-2 hover:cursor-pointer rounded-lg transition"
+                            className="hover:bg-white/20 p-2 hover:cursor-pointer rounded-xl transition"
                         >
-                            <X className="w-6 h-6" />
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </div>
 
@@ -796,6 +800,7 @@ export default function ModalOrderDetail({
                 totalAmount={calculateTotal()}
                 isProcessing={isUpdating || isCreatingInvoice}
             />
-        </>
+        </>,
+        document.body
     );
 }

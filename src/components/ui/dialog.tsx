@@ -21,7 +21,8 @@ function DialogTrigger({
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Portal>) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+  // container kia là document.body để đảm bảo dialog được render ở ngoài cùng của DOM
+  return <DialogPrimitive.Portal data-slot="dialog-portal" container={document.body} {...props} />
 }
 
 function DialogClose({

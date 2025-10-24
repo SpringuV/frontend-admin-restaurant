@@ -25,7 +25,7 @@ const AdminHeader = ({ onCollapse, collapsed, isMobile }: AdminHeaderProps) => {
         logout()
     }
     return (
-        <header className="bg-white/80 backdrop-blur-md w-full dark:bg-gray-800/80 border-b border-slate-200/50 h-16 sm:h-20 flex justify-between items-center px-3 sm:px-6 shadow-sm sticky top-0 z-30">
+        <header className="bg-white/80 backdrop-blur-md w-full dark:bg-gray-800/80 border-b border-slate-200/50 h-16 flex justify-between items-center px-3 sm:px-6 shadow-sm sticky top-0 z-30">
             <div className="flex items-center gap-3 sm:gap-4">
                 <Button
                     variant="ghost"
@@ -40,11 +40,11 @@ const AdminHeader = ({ onCollapse, collapsed, isMobile }: AdminHeaderProps) => {
                     )}
                 </Button>
                 
-                <div className="hidden sm:block">
+                {/* <div className="hidden sm:block">
                     <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent">
                         Dashboard
                     </h1>
-                </div>
+                </div> */}
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
@@ -98,15 +98,15 @@ const AdminHeader = ({ onCollapse, collapsed, isMobile }: AdminHeaderProps) => {
                             Chế độ tối
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <button onClick={handleLogout} className="w-full">
-                            <DropdownMenuItem className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white cursor-pointer rounded-lg transition-all font-medium">
+                        <button onClick={handleLogout} className="w-full px-2">
+                            <DropdownMenuItem className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 hover:bg-white/20 text-white cursor-pointer rounded-lg transition-all font-medium flex justify-center items-center">
                                 {isLoading ? (
-                                    <div className="flex items-center gap-2 w-full justify-center">
+                                    <div className="flex items-center gap-2 justify-center">
                                         <Spinner className="w-4 h-4" />
                                         <span>Đang đăng xuất...</span>
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-2 w-full">
+                                    <div className="flex items-center gap-2 justify-center">
                                         <LogOut className="w-4 h-4" />
                                         <span>Đăng xuất</span>
                                     </div>

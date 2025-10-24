@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import PaymentMethodModal from './payment-method-model';
 import { getUserIdFromStorage } from '@/lib/utils';
 import Alert from '@/components/alert/alert';
+import { createPortal } from 'react-dom';
 
 type PaymentMethod = 'CASH' | 'BANK_TRANSFER';
 
@@ -237,12 +238,15 @@ export default function ModalOrderFood({ isOpen, onClose, orderInfo, onSubmit }:
 
     if (!isOpen) return null;
 
-    return (
+    return createPortal(
         <>
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div 
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" 
+                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+            >
                 {/* Hiển thị Alert */}
                 {alert && (
-                    <div className='z-[1000]'>
+                    <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 10000 }}>
                         <Alert
                             title={alert.title}
                             type={alert.type}
@@ -253,20 +257,20 @@ export default function ModalOrderFood({ isOpen, onClose, orderInfo, onSubmit }:
                         />
                     </div>
                 )}
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col overflow-hidden">
                     {/* Header */}
-                    <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-t-xl">
+                    <div className="flex items-center justify-between p-4 sm:p-6 border-b-2 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white rounded-t-2xl">
                         <div>
-                            <h2 className="text-2xl font-bold flex items-center gap-2">
-                                <ShoppingCart className="w-7 h-7" />
+                            <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                                <ShoppingCart className="w-6 h-6 sm:w-7 sm:h-7" />
                                 Order món - Bàn {orderInfo.id_table}
                             </h2>
-                            <p className="text-sm opacity-90 mt-1">
+                            <p className="text-xs sm:text-sm opacity-90 mt-1">
                                 Khách: {orderInfo.customer_name} | SĐT: {orderInfo.phone_number}
                             </p>
                         </div>
-                        <button onClick={onClose} className="hover:bg-white/20 p-2 rounded-lg transition">
-                            <X className="w-6 h-6" />
+                        <button onClick={onClose} className="hover:bg-white/20 p-2 rounded-xl transition">
+                            <X className="w-5 h-5 sm:w-6 sm:h-6" />
                         </button>
                     </div>
 
@@ -480,6 +484,7 @@ export default function ModalOrderFood({ isOpen, onClose, orderInfo, onSubmit }:
                 totalAmount={totalAmount}
                 isProcessing={creatingOrder || isCreatingInvoice}
             />
-        </>
+        </>,
+        document.body
     );
 }

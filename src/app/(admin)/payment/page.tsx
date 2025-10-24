@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { QrCode, CheckCircle, Clock, AlertCircle } from "lucide-react";
 
@@ -12,98 +12,95 @@ export default function BankTransferPage() {
     const total = params.get("total");
     const [status, setStatus] = useState<"PENDING" | "PAID" | "ERROR">("PENDING");
     const [errorMessage, setErrorMessage] = useState("");
+    const [connectionStatus, setConnectionStatus] = useState("Đang kết nối...");
+    const wsRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
         if (!id_order) return;
 
-        // ✅ Kiểm tra biến môi trường
-        const wsBackend = process.env.NEXT_PUBLIC_WS_BACKEND;
-        console.log("🔧 WS_BACKEND from env:", wsBackend);
-
-        if (!wsBackend) {
-            console.error("❌ NEXT_PUBLIC_WS_BACKEND is not defined!");
-            setStatus("ERROR");
-            setErrorMessage("Chưa cấu hình WebSocket URL");
-            return;
-        }
-
-        // ✅ Thử kết nối trực tiếp trước, fallback sang SockJS nếu lỗi
-        // Option 1: WebSocket thuần (thử trước)
-        const wsUrl = `${wsBackend}/ws/check-transfer`;
+        const wsBackend = process.env.NEXT_PUBLIC_WS_BACKEND || "ws://localhost:8080";
+        const wsUrl = wsBackend.replace('http://', 'ws://').replace('https://', 'wss://');
         
-        // Option 2: SockJS fallback
-        const sockJsUrl = `${wsBackend.replace('ws://', 'http://').replace('wss://', 'https://')}/ws/check-transfer`;
-        
-        console.log("🔌 Connecting to:", wsUrl);
-        console.log("🔌 SockJS fallback:", sockJsUrl);
-        
-        let ws: WebSocket;
-        
-        try {
-            ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => {
-                console.log("✅ Connected to WebSocket");
-                const payload = JSON.stringify({ order_id: id_order });
-                console.log("📤 Sending:", payload);
-                ws.send(payload);
-            };
+        const ws = new WebSocket(`${wsUrl}/ws/checkTransfer`);
+        wsRef.current = ws;
 
-            ws.onmessage = (event) => {
-                console.log("📩 WebSocket message:", event.data);
-                
-                try {
-                    const data = JSON.parse(event.data);
-                    console.log("📊 Parsed data:", data);
+        ws.onopen = () => {
+            console.log("🔌 Connected to Polling WebSocket");
+            console.log("📡 Endpoint: /ws/checkTransfer");
+            console.log("⏱️  Polling interval: 5 seconds");
+            setConnectionStatus("Đã kết nối - Đang kiểm tra thanh toán...");
 
-                    if (data.status === "PAID") {
-                        setStatus("PAID");
-                        ws.close();
-                        alert("🎉 Thanh toán thành công!");
-                        setTimeout(() => {
-                            router.push("/booking");
-                        }, 2000);
-                    } else if (data.status === "listening") {
-                        console.log("👂 Server is listening for order:", data.order_id);
-                    } else if (data.error) {
-                        console.error("⚠️ Server error:", data.error);
+            const message = JSON.stringify({ order_id: id_order });
+            ws.send(message);
+            console.log("📤 Sent order_id:", message);
+        };
+
+        ws.onmessage = (event) => {
+            console.log("📩 Received WebSocket message:", event.data);
+
+            try {
+                const data = JSON.parse(event.data);
+                console.log("📊 Parsed data:", data);
+                console.log("🔍 Result:", data.result, "| Detail:", data.detail);
+
+                if (data.result && data.detail === "") {
+                    console.log("🎉 Payment confirmed!");
+                    console.log("✅ Order status → COMPLETED");
+                    console.log("✅ Invoice payment_status → PAID");
+                    console.log("✅ Invoice payment_method → BANKING");
+                    setStatus("PAID");
+                    setConnectionStatus("Thanh toán thành công! Đang cập nhật đơn hàng...");
+
+                    setTimeout(() => {
+                        console.log("🔄 Redirecting to /booking...");
+                        router.push("/booking");
+                    }, 3000);
+
+                } else if (!data.result) {
+                    if (data.detail === "Waiting for payment") {
+                        setConnectionStatus("Đang chờ thanh toán...");
+                    } else if (data.detail === "Order cancelled") {
                         setStatus("ERROR");
-                        setErrorMessage(data.error);
+                        setErrorMessage("Đơn hàng đã bị hủy");
+                        setConnectionStatus("Đơn hàng đã hủy");
+                        ws.close();
+                    } else if (data.detail) {
+                        setErrorMessage(data.detail);
+                        setConnectionStatus(`Lỗi: ${data.detail}`);
                     }
-                } catch (err) {
-                    console.error("⚠️ Error parsing message:", err);
                 }
-            };
 
-            ws.onclose = (event) => {
-                console.log("❌ WebSocket closed", {
-                    code: event.code,
-                    reason: event.reason,
-                    wasClean: event.wasClean
-                });
-                
-                if (status === "PENDING") {
-                    setStatus("ERROR");
-                    setErrorMessage("Kết nối bị đóng");
-                }
-            };
-
-            ws.onerror = (err) => {
-                console.error("⚠️ WebSocket error:", err);
+            } catch (err) {
+                console.error(" Error parsing message:", err);
                 setStatus("ERROR");
-                setErrorMessage("Không thể kết nối đến server");
-            };
+                setErrorMessage("Lỗi xử lý dữ liệu");
+            }
+        };
 
-        } catch (err) {
-            console.error("❌ Failed to create WebSocket:", err);
+        ws.onclose = (event) => {
+            console.log(" WebSocket closed:", event.code, event.reason);
+            setConnectionStatus("Mất kết nối");
+            if (status === "PENDING") {
+                if (event.code === 1000) {
+                    console.log(" Connection closed normally");
+                } else {
+                    setConnectionStatus("Mất kết nối");
+                }
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error(" WebSocket error:", error);
             setStatus("ERROR");
-            setErrorMessage("Không thể tạo kết nối WebSocket");
-        }
+            setErrorMessage("Không thể kết nối đến server");
+            setConnectionStatus("Lỗi kết nối");
+        };
 
         return () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                console.log("🔌 Closing WebSocket on cleanup");
-                ws.close();
+            console.log(" Cleaning up WebSocket connection");
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.close();
             }
         };
     }, [id_order, router, status]);
@@ -111,7 +108,16 @@ export default function BankTransferPage() {
     if (!id_order) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <p className="text-red-500">❌ Không tìm thấy order!</p>
+                <div className="text-center">
+                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <p className="text-red-500 text-xl font-semibold">Không tìm thấy đơn hàng!</p>
+                    <button
+                        onClick={() => router.push("/booking")}
+                        className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                    >
+                        Quay lại
+                    </button>
+                </div>
             </div>
         );
     }
@@ -119,16 +125,22 @@ export default function BankTransferPage() {
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 p-6">
             <div className="bg-white shadow-2xl rounded-2xl p-8 w-full max-w-md">
-                {/* Header */}
                 <div className="text-center mb-6">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                        <QrCode className="w-8 h-8 text-blue-600" />
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 shadow-lg">
+                        <QrCode className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-800">Chuyển khoản ngân hàng</h1>
-                    <p className="text-gray-500 mt-2">Quét mã QR để thanh toán</p>
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                        Chuyển khoản ngân hàng
+                    </h1>
+                    <p className="text-gray-500 mt-2">Quét mã QR hoặc chuyển khoản thủ công</p>
+                    <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full">
+                        <div className={`w-2 h-2 rounded-full ${status === "PAID" ? "bg-green-500" : "bg-yellow-500 animate-pulse"}`}></div>
+                        <span className="text-xs font-medium text-gray-600">
+                            {status === "PAID" ? "Đã thanh toán" : "Đang chờ thanh toán"}
+                        </span>
+                    </div>
                 </div>
 
-                {/* QR Code */}
                 <div className="bg-gray-50 p-4 rounded-xl mb-6">
                     <img
                         src={`https://qr.sepay.vn/img?acc=962471907021002&bank=BIDV&amount=${total}&des=ORDER${id_order}`}
@@ -137,62 +149,131 @@ export default function BankTransferPage() {
                     />
                 </div>
 
-                {/* Order Info */}
-                <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-xl mb-6">
-                    <div className="flex justify-between items-center mb-2">
+                <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 p-5 rounded-xl mb-6 shadow-sm">
+                    <div className="flex justify-between items-center mb-3">
                         <span className="text-gray-600 font-medium">Mã đơn hàng:</span>
-                        <span className="text-gray-800 font-bold">#{id_order}</span>
+                        <span className="text-gray-800 font-bold text-lg">#{id_order}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                        <span className="text-gray-600 font-medium">Số tiền:</span>
-                        <span className="text-3xl font-bold text-orange-600">
+                        <span className="text-gray-600 font-medium">Tổng tiền:</span>
+                        <span className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-red-500 bg-clip-text text-transparent">
                             {Number(total).toLocaleString()}đ
                         </span>
                     </div>
                 </div>
 
-                {/* Bank Info */}
-                <div className="bg-blue-50 p-4 rounded-xl mb-6 text-sm">
-                    <p className="font-semibold text-gray-700 mb-2">Thông tin chuyển khoản:</p>
-                    <div className="space-y-1 text-gray-600">
-                        <p>• Ngân hàng: <strong>BIDV</strong></p>
-                        <p>• Số tài khoản: <strong>962471907021002</strong></p>
-                        <p>• Nội dung: <strong>ORDER{id_order}</strong></p>
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6 text-sm">
+                    <p className="font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+                        Thông tin chuyển khoản:
+                    </p>
+                    <div className="space-y-2 text-gray-700">
+                        <div className="flex justify-between">
+                            <span>Ngân hàng:</span>
+                            <strong className="text-blue-700">BIDV</strong>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>Số tài khoản:</span>
+                            <strong className="text-blue-700 font-mono">962471907021002</strong>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span>Nội dung:</span>
+                            <strong className="text-blue-700 font-mono bg-blue-100 px-2 py-1 rounded">
+                                ORDER{id_order}
+                            </strong>
+                        </div>
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-blue-200">
+                        <p className="text-xs text-blue-600 italic">
+                            ⚠️ Vui lòng chuyển khoản đúng nội dung để hệ thống tự động xác nhận
+                        </p>
                     </div>
                 </div>
 
-                {/* Status */}
-                <div className="text-center">
+                <div className="text-center mb-6">
                     {status === "PENDING" && (
-                        <div className="flex items-center justify-center gap-3 text-yellow-600">
-                            <Clock className="w-5 h-5 animate-spin" />
-                            <p className="font-semibold">Đang chờ xác nhận thanh toán...</p>
+                        <div className="space-y-3">
+                            <div className="flex items-center justify-center gap-3 text-yellow-600 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                <Clock className="w-5 h-5 animate-spin" />
+                                <p className="font-semibold">Đang chờ xác nhận thanh toán...</p>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+                                <p className="text-xs text-gray-600 font-medium">Trạng thái kết nối:</p>
+                                <p className="text-sm text-gray-700">{connectionStatus}</p>
+                                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                                    <div className="flex gap-1">
+                                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></span>
+                                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                        <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                                    </div>
+                                    <span>Đang kiểm tra mỗi 5 giây</span>
+                                </div>
+                            </div>
                         </div>
                     )}
                     {status === "PAID" && (
-                        <div className="flex items-center justify-center gap-3 text-green-600">
-                            <CheckCircle className="w-6 h-6" />
-                            <p className="font-semibold text-lg">Thanh toán thành công!</p>
+                        <div className="space-y-4">
+                            <div className="flex flex-col items-center justify-center gap-3 text-green-600 animate-bounce">
+                                <CheckCircle className="w-8 h-8" />
+                                <p className="font-bold text-xl">Thanh toán thành công!</p>
+                            </div>
+                            
+                            {/* Payment confirmation details */}
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2 text-sm">
+                                <div className="flex items-center gap-2 text-green-700">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>Đơn hàng đã được xác nhận</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-green-700">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>Hóa đơn đã được thanh toán</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-green-700">
+                                    <CheckCircle className="w-4 h-4" />
+                                    <span>Phương thức: Chuyển khoản ngân hàng</span>
+                                </div>
+                            </div>
+
+                            <p className="text-sm text-gray-600 text-center">
+                                Đang chuyển về trang đặt bàn...
+                            </p>
                         </div>
                     )}
                     {status === "ERROR" && (
-                        <div className="flex flex-col items-center justify-center gap-3 text-red-600">
-                            <AlertCircle className="w-6 h-6" />
-                            <p className="font-semibold">Lỗi kết nối</p>
-                            {errorMessage && (
-                                <p className="text-sm text-gray-600">{errorMessage}</p>
-                            )}
+                        <div className="flex flex-col items-center justify-center gap-3">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full">
+                                <div className="flex items-center gap-3 text-red-600 mb-2">
+                                    <AlertCircle className="w-6 h-6" />
+                                    <p className="font-semibold">Có lỗi xảy ra</p>
+                                </div>
+                                {errorMessage && (
+                                    <p className="text-sm text-red-700 ml-9">{errorMessage}</p>
+                                )}
+                                <p className="text-xs text-red-600 mt-2 ml-9">{connectionStatus}</p>
+                            </div>
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="text-sm text-blue-600 hover:text-blue-700 underline"
+                            >
+                                Thử lại
+                            </button>
                         </div>
                     )}
                 </div>
 
-                {/* Back Button */}
                 <button
                     onClick={() => router.push("/booking")}
-                    className="w-full mt-6 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition"
+                    className="w-full mt-6 px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-lg font-medium transition-all duration-200 shadow-sm hover:shadow"
                 >
-                    Quay lại
+                    ← Quay lại trang đặt bàn
                 </button>
+
+                {/* Footer info */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-xs text-gray-500 text-center">
+                        🔒 Giao dịch được bảo mật bởi Sepay
+                    </p>
+                </div>
             </div>
         </div>
     );
