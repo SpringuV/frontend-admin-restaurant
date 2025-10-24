@@ -7,7 +7,7 @@ import { AlertProps, BookingType, TableType } from '../../../lib/types';
 import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { DropdownMenuContent } from '@radix-ui/react-dropdown-menu';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useState, useEffect } from 'react';
 import { getUserIdFromStorage } from '@/lib/utils';
 import { useBookingTable } from '@/hooks/booking-orders';
 import ModalOrderFood from './modal-order-food';
@@ -22,19 +22,39 @@ type PropsBookingType = {
 }
 
 const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, onClose }: PropsBookingType) => {
-    const [inputData, setInputData] = useState<BookingType>({
+    // State ban đầu cho form
+    const initialFormState: BookingType = {
         customer_name: "",
-        id_table: selectedTable?.id_table || 0,
+        id_table: 0,
         phone_cus: "",
         user_id: getUserIdFromStorage() as string,
         note_booking: "",
         sum_human: 1,
-    });
+    };
 
+    const [inputData, setInputData] = useState<BookingType>(initialFormState);
     const [showOrderModal, setShowOrderModal] = useState(false);
     const [bookingResponse, setBookingResponse] = useState<any>(null);
 
     const { bookTable, isLoading } = useBookingTable();
+
+    // Reset form khi modal mở hoặc table thay đổi
+    useEffect(() => {
+        if (isModalOpen && selectedTable) {
+            setInputData({
+                ...initialFormState,
+                id_table: selectedTable.id_table,
+                sum_human: 1, // Reset về 1 người
+            });
+        }
+    }, [isModalOpen, selectedTable]);
+
+    // Reset form khi đóng modal booking
+    useEffect(() => {
+        if (!isModalOpen) {
+            setInputData(initialFormState);
+        }
+    }, [isModalOpen]);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -86,11 +106,11 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                 
                 setBookingResponse(result.result);
 
-                // LƯU VÀO SESSION STORAGE (sử dụng helper function)
+                // LƯU VÀO SESSION STORAGE
                 saveBookingToSession({
                     id_table: selectedTable?.id_table || 0,
                     id_order: Number(result.result.orderBookingResponse.id_order) || 0,
-                    phone_cus: result.result.customerBookingResponse.phone_number_cus || '', // fallback nếu không có id_cus
+                    phone_cus: result.result.customerBookingResponse.phone_number_cus || '',
                 });
 
                 // Hiện thông báo thành công
@@ -100,6 +120,9 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                     message: `Bàn số ${selectedTable?.id_table} đã được đặt.`,
                     duration: 4000,
                 });
+
+                // Reset form trước khi chuyển modal
+                setInputData(initialFormState);
 
                 // Đóng modal booking và mở modal order
                 onClose();
@@ -126,8 +149,22 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
             duration: 4000,
         });
 
+        // Đóng modal order và reload table
         setShowOrderModal(false);
+        setBookingResponse(null); // Reset booking response
         onReloadListTable();
+    };
+
+    const handleCloseBookingModal = () => {
+        // Reset form khi đóng modal
+        setInputData(initialFormState);
+        onClose();
+    };
+
+    const handleCloseOrderModal = () => {
+        // Reset booking response và đóng modal
+        setShowOrderModal(false);
+        setBookingResponse(null);
     };
 
     return (
@@ -140,7 +177,10 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                             <h2 className="text-2xl font-bold text-gray-800">
                                 Đặt bàn số {selectedTable?.id_table}
                             </h2>
-                            <button onClick={onClose} className="text-gray-500 hover:text-gray-700 transition-colors">
+                            <button 
+                                onClick={handleCloseBookingModal} 
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
+                            >
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
@@ -230,7 +270,11 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
                                 </div>
 
                                 <div className="col-span-3 flex gap-3 pt-4">
-                                    <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium">
+                                    <button 
+                                        type="button" 
+                                        onClick={handleCloseBookingModal} 
+                                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                                    >
                                         Hủy
                                     </button>
                                     <button
@@ -251,7 +295,7 @@ const ModalBooking = ({ isModalOpen, onAlert, onReloadListTable, selectedTable, 
             {showOrderModal && bookingResponse && (
                 <ModalOrderFood
                     isOpen={showOrderModal}
-                    onClose={() => setShowOrderModal(false)}
+                    onClose={handleCloseOrderModal}
                     orderInfo={{
                         id_order: bookingResponse.orderBookingResponse.id_order,
                         id_table: bookingResponse.orderBookingResponse.id_table,

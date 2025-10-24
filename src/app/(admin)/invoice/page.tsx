@@ -1,3 +1,4 @@
+import InvoiceDashboard from "@/components/admin/invoice/invoice-dashboard";
 import { Metadata } from "next";
 
 
@@ -6,10 +7,10 @@ export const metadata: Metadata = {
     description: 'Trang quản lý hóa đơn',
 };
 
-const InvoicePage = ()=> {
+const InvoicePage = () => {
     return (
         <>
-            InvoicePage
+            <InvoiceDashboard />
         </>
     )
 }

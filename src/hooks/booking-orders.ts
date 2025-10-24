@@ -1,4 +1,4 @@
-import { BookingResponse, BookingType, CancelOrderRequest, CancelOrderResponse, CreateOrderRequest, CreateOrderResponse, LoadFoodResponse, LoadTableResponse, TableOrderDetailResponse } from "@/lib/types";
+import { BookingResponse, BookingType, CancelOrderRequest, CancelOrderResponse, CreateInvoiceRequest, CreateInvoiceResponse, CreateOrderRequest, CreateOrderResponse, LoadFoodResponse, LoadTableResponse, PaymentStatusResponse, TableOrderDetailResponse } from "@/lib/types";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import { fetcherWithAutoRefresh } from "./fetcher-with-auto-refresh";
@@ -112,5 +112,70 @@ export function useCancelOrder() {
         cancelLoading: isMutating,  // Trạng thái loading
         errorCancel: error,                  // Lỗi (nếu có)
         dataCancel: data,                   // Kết quả trả về { is_cancelled: true }
+    };
+}
+
+// ===== PAYMENT & INVOICE HOOKS =====
+
+/**
+ * Hook: Tạo Invoice cho Order
+ * - Tạo invoice mới với payment_method
+ * - CASH → status = PAID ngay
+ * - BANKING → status = PENDING, chờ webhook
+ */
+export function useCreateInvoicePayment() {
+    const { trigger, isMutating, error, data } = useSWRMutation
+    <
+        CreateInvoiceResponse,
+        Error,
+        string,
+        CreateInvoiceRequest
+    >(
+        `${process.env.NEXT_PUBLIC_URL_BACKEND}/api/invoice/create`,
+        async (url, { arg }) => {
+            // Lấy token từ localStorage để gửi kèm request
+            const token = localStorage.getItem('token');
+
+            return fetcherWithAutoRefresh<CreateInvoiceResponse>(
+                url,
+                {
+                    method: "POST",
+                    body: arg,
+                    token // Gửi token để auto-refresh nếu cần
+                }
+            );
+        }
+    );
+
+    return {
+        createInvoice: trigger,
+        isCreatingInvoice: isMutating,
+        invoiceError: error,
+        invoiceData: data,
+    };
+}
+
+/**
+ * Hook: Kiểm tra trạng thái thanh toán
+ * - Dùng để polling hoặc kiểm tra manual
+ */
+export function useCheckPaymentStatus() {
+    const { trigger, isMutating, error, data } = useSWRMutation<
+        PaymentStatusResponse,
+        Error,
+        string,
+        number
+    >(
+        `${process.env.NEXT_PUBLIC_URL_BACKEND}/api/invoice/status`,
+        async (url, { arg: orderId }) => {
+            return fetcherWithAutoRefresh(`${url}/${orderId}`, { method: "GET" });
+        }
+    );
+
+    return {
+        checkPaymentStatus: trigger,
+        isChecking: isMutating,
+        statusError: error,
+        paymentStatus: data?.result?.payment_status,
     };
 }

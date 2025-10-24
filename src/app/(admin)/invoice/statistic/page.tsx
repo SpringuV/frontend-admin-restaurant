@@ -1,3 +1,4 @@
+import InvoiceStatistic from "@/components/admin/invoice/invoice-statistic";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -10,7 +11,7 @@ const StatisticInvoicePage = () => {
 
     return (
         <>
-            StatisticPage Invoice
+            <InvoiceStatistic />
         </>
     )
 }

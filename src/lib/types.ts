@@ -84,6 +84,7 @@ export interface CreateOrderRequest {
         quantity: number;
         note: string;
     }[];
+    payment_method?: string;
 }
 
 export interface OrderResponse {
@@ -238,6 +239,41 @@ export interface ConfirmDialogProps {
     confirmText?: string;
     cancelText?: string;
     type?: 'danger' | 'warning' | 'info';
+}
+
+// ===== TYPES =====
+
+
+export interface CreateInvoiceRequest {
+    id_user?: string | null;  // Optional vì có thể backend tự lấy từ session
+    id_order: number;
+    phone_number_cus?: string;  // Optional nếu đã có trong order
+    discount: number;
+    payment_method: 'CASH' | 'BANKING';
+    note: string;
+}
+
+export interface CreateInvoiceResponse {
+    code: number;
+    message: string;
+    result: {
+        id_invoice: string;
+        id_order: number;
+        payment_method: string;
+        discount: number;
+        note: string;
+        created_at: string;
+    };
+}
+
+export interface PaymentStatusResponse {
+    code: number;
+    message?: string;
+    result: {
+        id_order: number;
+        payment_status: 'PENDING' | 'PAID' | 'REFUNDED';
+        payment_method: 'CASH' | 'BANKING';
+    };
 }
 
 
