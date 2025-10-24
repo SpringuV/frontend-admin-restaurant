@@ -13,12 +13,20 @@ import {
     UserPlus,
     Layers,
     ClipboardList,
-    Warehouse
+    Warehouse,
+    X
 } from "lucide-react";
-import { PropsType } from '../lib/types';
 import { usePathname, useRouter } from 'next/navigation';
 
-const AdminSideBar = ({ collapsed }: PropsType) => {
+interface AdminSideBarProps {
+    collapsed: boolean;
+    onCollapse: (value: boolean) => void;
+    isMobile?: boolean;
+    mobileMenuOpen?: boolean;
+    setMobileMenuOpen?: (value: boolean) => void;
+}
+
+const AdminSideBar = ({ collapsed, isMobile, mobileMenuOpen, setMobileMenuOpen }: AdminSideBarProps) => {
     const router = useRouter();
     const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
     const path_name = usePathname()
@@ -117,18 +125,42 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
         setOpenSubmenu(openSubmenu === itemId ? null : itemId);
     };
 
+    const handleMenuClick = (path?: string, parentId?: string) => {
+        handleNavigate(path, parentId);
+        if (isMobile && setMobileMenuOpen) {
+            setMobileMenuOpen(false);
+        }
+    };
+
     return (
         <aside
             className={cn(
-                'bg-gradient-to-b from-slate-50 to-red-50 text-slate-800 transition-all duration-300 ease-in-out flex flex-col shadow-lg border-r border-slate-200',
-                collapsed ? 'w-20' : 'w-52'
+                'bg-gradient-to-br from-purple-50 via-pink-50 to-rose-50 text-slate-800 transition-all duration-300 ease-in-out flex flex-col shadow-xl border-r border-slate-200/50 backdrop-blur-sm',
+                collapsed ? 'w-20' : 'w-64',
+                isMobile && 'fixed inset-y-0 left-0 z-50',
+                isMobile && !mobileMenuOpen && '-translate-x-full'
             )}
         >
             {/* Logo */}
-            <div className="h-16 flex items-center justify-center border-b border-slate-300 bg-white/50 backdrop-blur-sm">
-                <div className="text-2xl font-bold text-red-600">
-                    {collapsed ? <img src={'/image.png'} alt='Ảnh bún bò thumbnail' loading='lazy' /> : 'Bún Bò Ha'}
+            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-200/50 bg-white/70 backdrop-blur-md shadow-sm">
+                <div className={cn(
+                    "font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-rose-600 bg-clip-text text-transparent transition-all",
+                    collapsed ? "text-xl" : "text-2xl"
+                )}>
+                    {collapsed ? (
+                        <img src={'/image.png'} alt='Logo' className="w-10 h-10 object-cover rounded-lg" loading='lazy' />
+                    ) : (
+                        'Bún Bò Ha'
+                    )}
                 </div>
+                {isMobile && !collapsed && (
+                    <button 
+                        onClick={() => setMobileMenuOpen && setMobileMenuOpen(false)}
+                        className="p-2 rounded-lg hover:bg-rose-100 transition-colors"
+                    >
+                        <X className="w-5 h-5 text-rose-600" />
+                    </button>
+                )}
             </div>
 
             {/* Menu */}
@@ -148,22 +180,29 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
                             {/* Main Menu Item */}
                             <div
                                 className={cn(
-                                    'flex items-center gap-3 px-4 py-3 hover:bg-red-100 cursor-pointer transition-colors rounded-lg mx-2',
+                                    'flex items-center gap-3 px-4 py-3 cursor-pointer transition-all rounded-xl mx-2 group',
                                     collapsed && 'justify-center',
-                                    (isActiveParent || isActiveSub) && 'bg-red-500 text-white shadow-md'
+                                    (isActiveParent || isActiveSub) 
+                                        ? 'bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white shadow-lg scale-105' 
+                                        : 'hover:bg-gradient-to-r hover:from-purple-100 hover:via-pink-100 hover:to-rose-100 hover:scale-105 hover:shadow-md'
                                 )}
-                                onClick={() =>
-                                    item.hasSubmenu
-                                        ? toggleSubmenu(item.id)
-                                        : handleNavigate(item.path)
-                                }
+                                onClick={() => {
+                                    if (item.hasSubmenu) {
+                                        toggleSubmenu(item.id);
+                                    } else {
+                                        handleMenuClick(item.path);
+                                    }
+                                }}
                             >
-                                <span>{item.icon}</span>
+                                <span className={cn(
+                                    "transition-colors",
+                                    (isActiveParent || isActiveSub) && "text-white"
+                                )}>{item.icon}</span>
                                 {!collapsed && (
                                     <>
-                                        <span className="text-sm font-medium flex-1">{item.label}</span>
+                                        <span className="text-sm font-semibold flex-1">{item.label}</span>
                                         {item.hasSubmenu && (
-                                            <span className="transition-transform duration-200">
+                                            <span className="transition-transform duration-300">
                                                 {isExpanded ? (
                                                     <ChevronDown className="w-4 h-4" />
                                                 ) : (
@@ -177,22 +216,22 @@ const AdminSideBar = ({ collapsed }: PropsType) => {
 
                             {/* Submenu */}
                             {item.hasSubmenu && !collapsed && isExpanded && (
-                                <div className="bg-white/30 backdrop-blur-sm mx-2 rounded-lg mt-1">
+                                <div className="bg-white/60 backdrop-blur-md mx-2 rounded-xl mt-1 border border-slate-200/50 shadow-inner overflow-hidden">
                                     {item.submenu.map((subItem) => {
                                         const isActiveSubItem = path_name === (subItem.path);
                                         return (
                                             <div
                                                 key={subItem.id}
                                                 className={cn(
-                                                    "flex items-center gap-3 px-4 py-2.5 pl-12 cursor-pointer transition-colors rounded-lg mx-2 my-1",
+                                                    "flex items-center gap-3 px-4 py-2.5 pl-12 cursor-pointer transition-all mx-2 my-1 rounded-lg",
                                                     isActiveSubItem
-                                                        ? "bg-red-400 text-white shadow-sm"
-                                                        : "hover:bg-red-50 text-slate-700"
+                                                        ? "bg-gradient-to-r from-rose-400 to-pink-400 text-white shadow-md scale-105"
+                                                        : "hover:bg-gradient-to-r hover:from-rose-50 hover:to-pink-50 text-slate-700 hover:scale-105"
                                                 )}
-                                                onClick={() => handleNavigate(subItem.path, item.id)}
+                                                onClick={() => handleMenuClick(subItem.path, item.id)}
                                             >
                                                 <span>{subItem.icon}</span>
-                                                <span className="text-sm">{subItem.label}</span>
+                                                <span className="text-sm font-medium">{subItem.label}</span>
                                             </div>
                                         );
                                     })}

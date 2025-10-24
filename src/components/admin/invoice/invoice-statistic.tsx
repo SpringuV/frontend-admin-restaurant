@@ -9,16 +9,16 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 
-const COLORS = {
-    primary: '#f43f5e', // rose-500
-    secondary: '#fb7185', // rose-400
-    tertiary: '#fda4af', // rose-300
-    success: '#10b981', // green-500
-    warning: '#f59e0b', // amber-500
-    info: '#3b82f6', // blue-500
-};
-
-const CHART_COLORS = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#ffe4e6', '#10b981', '#3b82f6', '#f59e0b'];
+const CHART_COLORS = [
+    '#f43f5e', // rose
+    '#a855f7', // purple
+    '#06b6d4', // cyan
+    '#10b981', // emerald
+    '#f59e0b', // amber
+    '#ec4899', // pink
+    '#6366f1', // indigo
+    '#f97316', // orange
+];
 
 export default function InvoiceStatistic() {
     const { statistics, isLoadingStatistics, statisticsError, reloadStatistics } = useLoadRevenueStatistics();
@@ -206,7 +206,7 @@ export default function InvoiceStatistic() {
 
             {/* Overview Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-xl p-4 sm:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-2xl transition-shadow">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs sm:text-sm opacity-90">Doanh thu ròng</p>
@@ -221,7 +221,7 @@ export default function InvoiceStatistic() {
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-4 sm:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-2xl transition-shadow">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs sm:text-sm opacity-90">Tổng doanh thu</p>
@@ -236,7 +236,7 @@ export default function InvoiceStatistic() {
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl p-4 sm:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-pink-500 via-rose-500 to-red-600 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-2xl transition-shadow">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs sm:text-sm opacity-90">Tổng hóa đơn</p>
@@ -253,7 +253,7 @@ export default function InvoiceStatistic() {
                     </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-4 sm:p-6 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 rounded-xl p-4 sm:p-6 text-white shadow-lg hover:shadow-2xl transition-shadow">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-xs sm:text-sm opacity-90">DT TB/ngày</p>
@@ -302,17 +302,17 @@ export default function InvoiceStatistic() {
                         </PieChart>
                     </ResponsiveContainer>
                     <div className="grid grid-cols-3 gap-2 mt-4 text-xs sm:text-sm">
-                        <div className="text-center p-2 bg-rose-50 rounded">
+                        <div className="text-center p-2 bg-gradient-to-br from-rose-50 to-pink-50 rounded-lg border border-rose-200">
                             <p className="text-gray-600">Đã TT</p>
                             <p className="font-bold text-rose-600">{statistics.paymentStatusStats.paidCount}</p>
                         </div>
-                        <div className="text-center p-2 bg-amber-50 rounded">
+                        <div className="text-center p-2 bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
                             <p className="text-gray-600">Chờ TT</p>
-                            <p className="font-bold text-amber-600">{statistics.paymentStatusStats.pendingCount}</p>
+                            <p className="font-bold text-purple-600">{statistics.paymentStatusStats.pendingCount}</p>
                         </div>
-                        <div className="text-center p-2 bg-gray-50 rounded">
+                        <div className="text-center p-2 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-lg border border-cyan-200">
                             <p className="text-gray-600">Hoàn tiền</p>
-                            <p className="font-bold text-gray-600">{statistics.paymentStatusStats.refundedCount}</p>
+                            <p className="font-bold text-cyan-600">{statistics.paymentStatusStats.refundedCount}</p>
                         </div>
                     </div>
                 </div>
@@ -325,25 +325,32 @@ export default function InvoiceStatistic() {
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={paymentMethodChartData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis dataKey="name" stroke="#6b7280" />
+                            <YAxis stroke="#6b7280" />
                             <Tooltip 
                                 formatter={(value: number) => `${value.toLocaleString()}đ`}
+                                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                             />
                             <Legend />
-                            <Bar dataKey="value" fill={COLORS.primary} name="Doanh thu" />
+                            <Bar dataKey="value" fill="url(#colorPayment)" name="Doanh thu" radius={[8, 8, 0, 0]} />
+                            <defs>
+                                <linearGradient id="colorPayment" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.9}/>
+                                    <stop offset="100%" stopColor="#0891b2" stopOpacity={0.7}/>
+                                </linearGradient>
+                            </defs>
                         </BarChart>
                     </ResponsiveContainer>
                     <div className="grid grid-cols-2 gap-2 mt-4 text-xs sm:text-sm">
-                        <div className="text-center p-2 bg-green-50 rounded">
+                        <div className="text-center p-2 bg-gradient-to-br from-emerald-50 to-green-50 rounded-lg border border-emerald-200">
                             <p className="text-gray-600">Tiền mặt</p>
-                            <p className="font-bold text-green-600">{statistics.paymentMethodStats.cashCount} HĐ</p>
+                            <p className="font-bold text-emerald-600">{statistics.paymentMethodStats.cashCount} HĐ</p>
                             <p className="text-xs text-gray-500">{statistics.paymentMethodStats.cashAmount.toLocaleString()}đ</p>
                         </div>
-                        <div className="text-center p-2 bg-blue-50 rounded">
+                        <div className="text-center p-2 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-lg border border-cyan-200">
                             <p className="text-gray-600">Chuyển khoản</p>
-                            <p className="font-bold text-blue-600">{statistics.paymentMethodStats.bankingCount} HĐ</p>
+                            <p className="font-bold text-cyan-600">{statistics.paymentMethodStats.bankingCount} HĐ</p>
                             <p className="text-xs text-gray-500">{statistics.paymentMethodStats.bankingAmount.toLocaleString()}đ</p>
                         </div>
                     </div>
@@ -353,27 +360,53 @@ export default function InvoiceStatistic() {
             {/* Biểu đồ doanh thu theo ngày */}
             <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
                 <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-rose-600" />
+                    <TrendingUp className="w-5 h-5 text-purple-600" />
                     Doanh thu 14 ngày gần nhất
                 </h3>
                 <ResponsiveContainer width="100%" height={350}>
                     <LineChart data={dailyRevenueChartData}>
-                        <CartesianGrid strokeDasharray="3 3" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis 
                             dataKey="date" 
                             angle={-45}
                             textAnchor="end"
                             height={80}
                             tick={{ fontSize: 12 }}
+                            stroke="#6b7280"
                         />
-                        <YAxis />
+                        <YAxis stroke="#6b7280" />
                         <Tooltip 
                             formatter={(value: number) => `${value.toLocaleString()}đ`}
+                            contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                         />
                         <Legend />
-                        <Line type="monotone" dataKey="revenue" stroke={COLORS.primary} strokeWidth={2} name="Doanh thu" />
-                        <Line type="monotone" dataKey="discount" stroke={COLORS.warning} strokeWidth={2} name="Giảm giá" />
-                        <Line type="monotone" dataKey="netRevenue" stroke={COLORS.success} strokeWidth={2} name="Doanh thu ròng" />
+                        <Line 
+                            type="monotone" 
+                            dataKey="revenue" 
+                            stroke="#a855f7" 
+                            strokeWidth={3} 
+                            name="Doanh thu"
+                            dot={{ fill: '#a855f7', r: 4 }}
+                            activeDot={{ r: 6 }}
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="discount" 
+                            stroke="#f97316" 
+                            strokeWidth={3} 
+                            name="Giảm giá"
+                            dot={{ fill: '#f97316', r: 4 }}
+                            activeDot={{ r: 6 }}
+                        />
+                        <Line 
+                            type="monotone" 
+                            dataKey="netRevenue" 
+                            stroke="#10b981" 
+                            strokeWidth={3} 
+                            name="Doanh thu ròng"
+                            dot={{ fill: '#10b981', r: 4 }}
+                            activeDot={{ r: 6 }}
+                        />
                     </LineChart>
                 </ResponsiveContainer>
             </div>
@@ -383,32 +416,39 @@ export default function InvoiceStatistic() {
                 {/* Top 5 khách hàng */}
                 <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
                     <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Users className="w-5 h-5 text-rose-600" />
+                        <Users className="w-5 h-5 text-pink-600" />
                         Top 5 khách hàng
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={topCustomersChartData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis type="number" stroke="#6b7280" />
+                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} stroke="#6b7280" />
                             <Tooltip 
                                 formatter={(value: number) => `${value.toLocaleString()}đ`}
+                                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                             />
-                            <Bar dataKey="value" fill={COLORS.secondary} name="Tổng chi tiêu" />
+                            <Bar dataKey="value" fill="url(#colorCustomer)" name="Tổng chi tiêu" radius={[0, 8, 8, 0]} />
+                            <defs>
+                                <linearGradient id="colorCustomer" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stopColor="#ec4899" stopOpacity={0.8}/>
+                                    <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.9}/>
+                                </linearGradient>
+                            </defs>
                         </BarChart>
                     </ResponsiveContainer>
                     <div className="mt-4 space-y-2">
                         {statistics.topCustomers.slice(0, 5).map((customer, index) => (
-                            <div key={customer.customerId} className="flex items-center justify-between text-xs sm:text-sm p-2 bg-rose-50 rounded">
+                            <div key={customer.customerId} className="flex items-center justify-between text-xs sm:text-sm p-2 bg-gradient-to-r from-pink-50 to-rose-50 rounded-lg border border-pink-200 hover:border-pink-300 transition">
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-rose-600">#{index + 1}</span>
+                                    <span className="font-bold text-pink-600">#{index + 1}</span>
                                     <div>
                                         <p className="font-medium">{customer.customerName}</p>
                                         <p className="text-gray-500 text-xs">{customer.phoneNumber}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-bold text-rose-600">{customer.totalOrders} đơn</p>
+                                    <p className="font-bold text-pink-600">{customer.totalOrders} đơn</p>
                                     <p className="text-xs text-gray-500">{customer.totalSpent.toLocaleString()}đ</p>
                                 </div>
                             </div>
@@ -419,32 +459,39 @@ export default function InvoiceStatistic() {
                 {/* Top 5 nhân viên */}
                 <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
                     <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                        <Award className="w-5 h-5 text-rose-600" />
+                        <Award className="w-5 h-5 text-amber-600" />
                         Top 5 nhân viên
                     </h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart data={topEmployeesChartData} layout="vertical">
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" />
-                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis type="number" stroke="#6b7280" />
+                            <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 12 }} stroke="#6b7280" />
                             <Tooltip 
                                 formatter={(value: number) => `${value.toLocaleString()}đ`}
+                                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
                             />
-                            <Bar dataKey="value" fill={COLORS.info} name="Tổng doanh thu" />
+                            <Bar dataKey="value" fill="url(#colorEmployee)" name="Tổng doanh thu" radius={[0, 8, 8, 0]} />
+                            <defs>
+                                <linearGradient id="colorEmployee" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stopColor="#f59e0b" stopOpacity={0.8}/>
+                                    <stop offset="100%" stopColor="#f97316" stopOpacity={0.9}/>
+                                </linearGradient>
+                            </defs>
                         </BarChart>
                     </ResponsiveContainer>
                     <div className="mt-4 space-y-2">
                         {statistics.topEmployees.slice(0, 5).map((emp, index) => (
-                            <div key={emp.employeeId} className="flex items-center justify-between text-xs sm:text-sm p-2 bg-blue-50 rounded">
+                            <div key={emp.employeeId} className="flex items-center justify-between text-xs sm:text-sm p-2 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border border-amber-200 hover:border-amber-300 transition">
                                 <div className="flex items-center gap-2">
-                                    <span className="font-bold text-blue-600">#{index + 1}</span>
+                                    <span className="font-bold text-amber-600">#{index + 1}</span>
                                     <div>
                                         <p className="font-medium">{emp.employeeName}</p>
                                         <p className="text-gray-500 text-xs">@{emp.username}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="font-bold text-blue-600">{emp.totalInvoices} HĐ</p>
+                                    <p className="font-bold text-amber-600">{emp.totalInvoices} HĐ</p>
                                     <p className="text-xs text-gray-500">{emp.totalRevenue.toLocaleString()}đ</p>
                                 </div>
                             </div>
